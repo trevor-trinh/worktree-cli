@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/johnlindquist/worktree-cli/compare/v1.1.0...v1.2.0) (2025-03-20)
+
+
+### Features
+
+* add shorthand flags -i and -e for --install and --editor ([8c6f4de](https://github.com/johnlindquist/worktree-cli/commit/8c6f4de0bb9f0293c816e1f1176acbe86f7132d6))
+
 # [1.1.0](https://github.com/johnlindquist/worktree-cli/compare/v1.0.0...v1.1.0) (2025-03-20)
 
 
