@@ -1,6 +1,6 @@
 {
 	"name": "cursor-worktree",
-	"version": "0.0.0-development",
+	"version": "1.0.0",
 	"description": "A CLI tool for managing Git worktrees with a focus on opening them in the Cursor editor.",
 	"author": "Your Name",
 	"license": "MIT",
@@ -27,7 +27,9 @@
 		"semantic-release": "^23.0.2"
 	},
 	"release": {
-		"branches": ["main"],
+		"branches": [
+			"main"
+		],
 		"plugins": [
 			"@semantic-release/commit-analyzer",
 			"@semantic-release/release-notes-generator",
