@@ -1,7 +1,7 @@
 import { execa } from "execa";
 import chalk from "chalk";
 import { stat } from "node:fs/promises";
-import { resolve } from "node:path";
+import { resolve, join, dirname, basename } from "node:path";
 
 export async function newWorktreeHandler(
     branchName: string = "main",
@@ -12,7 +12,16 @@ export async function newWorktreeHandler(
         await execa("git", ["rev-parse", "--is-inside-work-tree"]);
 
         // 2. Build final path for the new worktree
-        const folderName = options.path ?? `./${branchName}-worktree`;
+        let folderName: string;
+        if (options.path) {
+            folderName = options.path;
+        } else {
+            const currentDir = process.cwd();
+            const parentDir = dirname(currentDir);
+            const currentDirName = basename(currentDir);
+            // Create a sibling directory: current directory name concatenated with branchName
+            folderName = join(parentDir, `${currentDirName}${branchName}`);
+        }
         const resolvedPath = resolve(folderName);
 
         // 3. (Optional) checkout new local branch if it doesn't exist yet
