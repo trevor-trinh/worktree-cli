@@ -24,25 +24,15 @@ export async function newWorktreeHandler(
         }
         const resolvedPath = resolve(folderName);
 
-        // 3. (Optional) checkout new local branch if it doesn't exist yet
-        if (options.checkout) {
-            const { stdout } = await execa("git", ["branch", "--list", branchName]);
-            if (!stdout) {
-                console.log(chalk.yellow(`Branch "${branchName}" doesn't exist locally. Creating...`));
-                await execa("git", ["checkout", "-b", branchName]);
-            } else {
-                console.log(chalk.green(`Branch "${branchName}" found locally.`));
-            }
-        } else {
-            // Check if branch exists locally or remotely
-            const { stdout: localBranches } = await execa("git", ["branch", "--list", branchName]);
-            const { stdout: remoteBranches } = await execa("git", ["branch", "-r", "--list", `origin/${branchName}`]);
+        // 3. Check if branch exists and create if needed
+        const { stdout: localBranches } = await execa("git", ["branch", "--list", branchName]);
+        const { stdout: remoteBranches } = await execa("git", ["branch", "-r", "--list", `origin/${branchName}`]);
 
-            if (!localBranches && !remoteBranches) {
-                console.error(chalk.red(`Branch "${branchName}" does not exist locally or remotely. Use --checkout to create it.`));
-                process.exit(1);
-            }
-            console.log(chalk.green(`Using branch "${branchName}".`));
+        if (!localBranches && !remoteBranches) {
+            console.log(chalk.yellow(`Branch "${branchName}" doesn't exist. Creating new branch...`));
+            await execa("git", ["checkout", "-b", branchName]);
+        } else {
+            console.log(chalk.green(`Using existing branch "${branchName}".`));
         }
 
         // 4. Create the new worktree
