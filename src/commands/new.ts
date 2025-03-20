@@ -24,20 +24,21 @@ export async function newWorktreeHandler(
         }
         const resolvedPath = resolve(folderName);
 
-        // 3. Check if branch exists and create if needed
+        // 3. Check if branch exists
         const { stdout: localBranches } = await execa("git", ["branch", "--list", branchName]);
         const { stdout: remoteBranches } = await execa("git", ["branch", "-r", "--list", `origin/${branchName}`]);
 
-        if (!localBranches && !remoteBranches) {
-            console.log(chalk.yellow(`Branch "${branchName}" doesn't exist. Creating new branch...`));
-            await execa("git", ["checkout", "-b", branchName]);
-        } else {
-            console.log(chalk.green(`Using existing branch "${branchName}".`));
-        }
-
         // 4. Create the new worktree
         console.log(chalk.blue(`Creating new worktree for branch "${branchName}" at: ${resolvedPath}`));
-        await execa("git", ["worktree", "add", resolvedPath, branchName]);
+
+        if (!localBranches && !remoteBranches) {
+            console.log(chalk.yellow(`Branch "${branchName}" doesn't exist. Creating new branch with worktree...`));
+            // Create a new branch and worktree in one command with -b flag
+            await execa("git", ["worktree", "add", "-b", branchName, resolvedPath]);
+        } else {
+            console.log(chalk.green(`Using existing branch "${branchName}".`));
+            await execa("git", ["worktree", "add", resolvedPath, branchName]);
+        }
 
         // 5. (Optional) Install dependencies if --install flag is provided
         if (options.install) {
