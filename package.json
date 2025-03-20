@@ -11,7 +11,8 @@
 	"scripts": {
 		"build": "tsc",
 		"start": "node dist/index.js",
-		"dev": "tsc -w"
+		"dev": "tsc -w",
+		"semantic-release": "semantic-release"
 	},
 	"dependencies": {
 		"chalk": "^5.2.0",
@@ -20,6 +21,22 @@
 	},
 	"devDependencies": {
 		"@types/node": "^18.0.0",
-		"typescript": "^5.0.2"
+		"typescript": "^5.0.2",
+		"@semantic-release/changelog": "^6.0.3",
+		"@semantic-release/git": "^10.0.1",
+		"semantic-release": "^23.0.2"
+	},
+	"release": {
+		"branches": ["main"],
+		"plugins": [
+			"@semantic-release/commit-analyzer",
+			"@semantic-release/release-notes-generator",
+			"@semantic-release/changelog",
+			"@semantic-release/npm",
+			"@semantic-release/git"
+		]
+	},
+	"publishConfig": {
+		"access": "public"
 	}
 }
