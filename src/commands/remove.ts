@@ -3,7 +3,10 @@ import chalk from "chalk";
 import { stat, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 
-export async function removeWorktreeHandler(pathOrBranch: string = "") {
+export async function removeWorktreeHandler(
+    pathOrBranch: string = "",
+    options: { force?: boolean }
+) {
     try {
         await execa("git", ["rev-parse", "--is-inside-work-tree"]);
 
@@ -47,8 +50,8 @@ export async function removeWorktreeHandler(pathOrBranch: string = "") {
 
         console.log(chalk.blue(`Removing worktree: ${targetPath}`));
 
-        // Remove from Git's perspective
-        await execa("git", ["worktree", "remove", targetPath]);
+        // Pass the "--force" flag to Git if specified
+        await execa("git", ["worktree", "remove", ...(options.force ? ["--force"] : []), targetPath]);
 
         // Optionally also remove the physical directory if it still exists
         try {

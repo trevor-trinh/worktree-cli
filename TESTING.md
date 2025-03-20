@@ -18,3 +18,22 @@
    ```
 2. Verify that a new sibling directory named `<currentDirectoryName>editor` is created.
 3. Confirm that the worktree is added to the Git repository and that the Cursor editor opens the new directory. 
+
+## Remove Worktree Force Flag Test
+
+1. Create a test worktree:
+   ```bash
+   cursor-worktree new test-branch
+   ```
+2. Make some changes in the worktree that would prevent normal removal
+3. Try removing the worktree without the force flag:
+   ```bash
+   cursor-worktree remove test-branch
+   ```
+   This should fail if there are uncommitted changes
+4. Try removing the worktree with the force flag:
+   ```bash
+   cursor-worktree remove --force test-branch
+   ```
+   This should succeed and remove the worktree regardless of its state
+5. Verify that the worktree directory is removed and the Git worktree reference is cleaned up 
