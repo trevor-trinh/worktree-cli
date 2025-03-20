@@ -14,7 +14,7 @@
 
 1. In a test repository, run:
    ```bash
-   cursor-worktree new editor
+   cwt new editor
    ```
 2. Verify that a new sibling directory named `<currentDirectoryName>editor` is created.
 3. Confirm that the worktree is added to the Git repository and that the Cursor editor opens the new directory. 
@@ -41,4 +41,23 @@
    - Remove a worktree:
      ```bash
      cwt remove feature/test
-     ``` 
+     ```
+
+## Remove Worktree Force Flag Test
+
+1. Create a test worktree:
+   ```bash
+   cwt new test-branch
+   ```
+2. Make some changes in the worktree that would prevent normal removal
+3. Try removing the worktree without the force flag:
+   ```bash
+   cwt remove test-branch
+   ```
+   This should fail if there are uncommitted changes
+4. Try removing the worktree with the force flag:
+   ```bash
+   cwt remove --force test-branch
+   ```
+   This should succeed and remove the worktree regardless of its state
+5. Verify that the worktree directory is removed and the Git worktree reference is cleaned up
