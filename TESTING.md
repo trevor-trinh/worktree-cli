@@ -18,3 +18,27 @@
    ```
 2. Verify that a new sibling directory named `<currentDirectoryName>editor` is created.
 3. Confirm that the worktree is added to the Git repository and that the Cursor editor opens the new directory. 
+
+## Manual Test for CLI Command Name Change
+
+1. Install the package globally:
+   ```bash
+   pnpm install -g .
+   ```
+2. Run the command help to verify the new command:
+   ```bash
+   cwt --help
+   ```
+3. Optionally, test additional commands:
+   - Create a new worktree:
+     ```bash
+     cwt new feature/test
+     ```
+   - List worktrees:
+     ```bash
+     cwt list
+     ```
+   - Remove a worktree:
+     ```bash
+     cwt remove feature/test
+     ``` 
