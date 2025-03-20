@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/johnlindquist/worktree-cli/compare/v1.0.0...v1.1.0) (2025-03-20)
+
+
+### Features
+
+* create worktrees in sibling directories ([37dc420](https://github.com/johnlindquist/worktree-cli/commit/37dc420cf1539c68a32926e97c2f35762f5392b0))
+
 # 1.0.0 (2025-03-20)
 
 
