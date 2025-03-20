@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"type": "module",
 	"bin": {
-		"cursor-worktree": "dist/index.js"
+		"cwt": "dist/index.js"
 	},
 	"scripts": {
 		"build": "tsc",

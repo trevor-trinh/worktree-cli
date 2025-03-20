@@ -13,7 +13,7 @@ pnpm install -g .
 ### Create a new worktree
 
 ```bash
-cursor-worktree new <branchName> [options]
+cwt new <branchName> [options]
 ```
 
 Options:
@@ -22,27 +22,27 @@ Options:
 
 Example:
 ```bash
-cursor-worktree new feature/login
-cursor-worktree new feature/chat --checkout
-cursor-worktree new feature/auth -p ./auth-worktree
+cwt new feature/login
+cwt new feature/chat --checkout
+cwt new feature/auth -p ./auth-worktree
 ```
 
 ### List worktrees
 
 ```bash
-cursor-worktree list
+cwt list
 ```
 
 ### Remove a worktree
 
 ```bash
-cursor-worktree remove <pathOrBranch>
+cwt remove <pathOrBranch>
 ```
 
 You can remove a worktree by either its path or branch name:
 ```bash
-cursor-worktree remove ./feature/login-worktree
-cursor-worktree remove feature/chat
+cwt remove ./feature/login-worktree
+cwt remove feature/chat
 ```
 
 ## Requirements
