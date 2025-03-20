@@ -1,11 +1,11 @@
-# cursor-worktree
+# @johnlindquist/worktree
 
 A CLI tool for managing Git worktrees with a focus on opening them in the Cursor editor.
 
 ## Installation
 
 ```bash
-pnpm install -g .
+pnpm install -g @johnlindquist/worktree
 ```
 
 ## Usage
@@ -13,7 +13,7 @@ pnpm install -g .
 ### Create a new worktree
 
 ```bash
-cwt new <branchName> [options]
+wt new <branchName> [options]
 ```
 
 Options:
@@ -22,27 +22,27 @@ Options:
 
 Example:
 ```bash
-cwt new feature/login
-cwt new feature/chat --checkout
-cwt new feature/auth -p ./auth-worktree
+wt new feature/login
+wt new feature/chat --checkout
+wt new feature/auth -p ./auth-worktree
 ```
 
 ### List worktrees
 
 ```bash
-cwt list
+wt list
 ```
 
 ### Remove a worktree
 
 ```bash
-cwt remove <pathOrBranch>
+wt remove <pathOrBranch>
 ```
 
 You can remove a worktree by either its path or branch name:
 ```bash
-cwt remove ./feature/login-worktree
-cwt remove feature/chat
+wt remove ./feature/login-worktree
+wt remove feature/chat
 ```
 
 ## Requirements

@@ -68,7 +68,7 @@ export async function mergeWorktreeHandler(
         await execa("git", ["merge", branchName]);
         console.log(chalk.green(`Merged branch "${branchName}" into "${currentBranch}".`));
 
-        // Step 3: Remove the worktree for the merged branch (similar to 'cwt remove')
+        // Step 3: Remove the worktree for the merged branch (similar to 'wt remove')
         console.log(chalk.blue(`Removing worktree for branch "${branchName}"...`));
         const removeArgs = ["worktree", "remove", ...(options.force ? ["--force"] : []), targetPath];
         await execa("git", removeArgs);

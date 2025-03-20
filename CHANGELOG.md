@@ -18,12 +18,12 @@
 
 ### Features
 
-* change CLI command name to 'cwt' ([4a8a562](https://github.com/johnlindquist/worktree-cli/commit/4a8a5620c3b24cabf4b222179e9a44502015e469))
+* change CLI command name to 'wt' ([4a8a562](https://github.com/johnlindquist/worktree-cli/commit/4a8a5620c3b24cabf4b222179e9a44502015e469))
 
 
 ### BREAKING CHANGES
 
-* The CLI command has been renamed from 'cursor-worktree' to 'cwt' for better usability. All users will need to update their commands to use 'cwt' instead of 'cursor-worktree'.
+* The CLI command has been renamed from '@johnlindquist/worktree' to 'wt' for better usability. All users will need to update their commands to use 'wt' instead of '@johnlindquist/worktree'.
 
 ## [1.2.1](https://github.com/johnlindquist/worktree-cli/compare/v1.2.0...v1.2.1) (2025-03-20)
 

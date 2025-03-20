@@ -4,7 +4,7 @@ globs:
 alwaysApply: false
 ---
 
-# Cursor-Worktree CLI
+# @johnlindquist/worktree CLI
 
 ## Key Files
 

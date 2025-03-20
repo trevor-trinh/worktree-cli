@@ -1,12 +1,12 @@
 {
-	"name": "cursor-worktree",
+	"name": "@johnlindquist/worktree",
 	"version": "2.0.2",
 	"description": "A CLI tool for managing Git worktrees with a focus on opening them in the Cursor editor.",
 	"author": "Your Name",
 	"license": "MIT",
 	"type": "module",
 	"bin": {
-		"cwt": "dist/index.js"
+		"wt": "dist/index.js"
 	},
 	"scripts": {
 		"build": "tsc",

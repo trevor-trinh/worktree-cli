@@ -10,7 +10,7 @@ import { mergeWorktreeHandler } from "./commands/merge.js";
 const program = new Command();
 
 program
-    .name("cwt")
+    .name("wt")
     .description("Manage git worktrees and open them in the Cursor editor.")
     .version("1.0.0");
 
