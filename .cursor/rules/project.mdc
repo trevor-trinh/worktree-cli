@@ -4,18 +4,18 @@ globs:
 alwaysApply: false
 ---
 
-# @johnlindquist/worktree CLI
+# Worktree CLI
 
 ## Key Files
 
-- **src/index.ts**: Main entry point that sets up the CLI commands and orchestrates the command handlers.
-- **src/commands/new.ts**: Implements logic to create new Git worktrees, with options for branch creation, dependency installation, and opening in an editor.
-- **src/commands/list.ts**: Provides functionality to list existing Git worktrees in the repository.
-- **src/commands/remove.ts**: Handles the removal of Git worktrees, including support for force deletion.
-- **package.json**: Project configuration file detailing dependencies, scripts, and publishing settings.
-- **tsconfig.json**: TypeScript configuration for compiling the codebase.
-- **.github/workflows/publish.yml**: GitHub Actions workflow for building and publishing the package to npm.
-- **CHANGELOG.md**: Logs version updates, bug fixes, and feature enhancements.
+- src/index.ts: Main entry point that sets up the CLI commands and orchestrates the command handlers.
+- src/commands/new.ts: Implements logic to create new Git worktrees, with options for branch creation, dependency installation, and opening in an editor.
+- src/commands/list.ts: Provides functionality to list existing Git worktrees in the repository.
+- src/commands/remove.ts: Handles the removal of Git worktrees, including support for force deletion.
+- package.json: Project configuration file detailing dependencies, scripts, and publishing settings.
+- tsconfig.json: TypeScript configuration for compiling the codebase.
+- .github/workflows/publish.yml: GitHub Actions workflow for building and publishing the package to npm.
+- CHANGELOG.md: Logs version updates, bug fixes, and feature enhancements.
 
 ## Core Features
 

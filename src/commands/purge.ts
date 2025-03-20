@@ -58,9 +58,27 @@ export async function purgeWorktreesHandler() {
             const answer = await askQuestion(`Do you want to remove this worktree? (y/N): `);
             if (answer.toLowerCase() === "y") {
                 console.log(chalk.blue(`Removing worktree for branch "${wt.branch}"...`));
-                // Remove worktree using Git
-                await execa("git", ["worktree", "remove", wt.path]);
-                console.log(chalk.green(`Removed worktree at ${wt.path}.`));
+                try {
+                    // Remove worktree using Git
+                    await execa("git", ["worktree", "remove", wt.path]);
+                    console.log(chalk.green(`Removed worktree at ${wt.path}.`));
+                } catch (removeError) {
+                    // Check if error is about modified files
+                    if (removeError instanceof Error && removeError.message.includes("modified or untracked files")) {
+                        console.log(chalk.yellow(`Worktree contains modified or untracked files.`));
+                        const forceAnswer = await askQuestion(`Do you want to force remove this worktree? (y/N): `);
+                        if (forceAnswer.toLowerCase() === "y") {
+                            await execa("git", ["worktree", "remove", "--force", wt.path]);
+                            console.log(chalk.green(`Force removed worktree at ${wt.path}.`));
+                        } else {
+                            console.log(chalk.yellow(`Skipping removal for worktree "${wt.branch}".`));
+                            continue;
+                        }
+                    } else {
+                        // Re-throw if it's a different error
+                        throw removeError;
+                    }
+                }
 
                 // Optionally remove the physical directory if it still exists
                 try {
