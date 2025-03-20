@@ -34,7 +34,15 @@ export async function newWorktreeHandler(
                 console.log(chalk.green(`Branch "${branchName}" found locally.`));
             }
         } else {
-            console.log(chalk.gray(`Using branch "${branchName}". Make sure it exists (local or remote).`));
+            // Check if branch exists locally or remotely
+            const { stdout: localBranches } = await execa("git", ["branch", "--list", branchName]);
+            const { stdout: remoteBranches } = await execa("git", ["branch", "-r", "--list", `origin/${branchName}`]);
+
+            if (!localBranches && !remoteBranches) {
+                console.error(chalk.red(`Branch "${branchName}" does not exist locally or remotely. Use --checkout to create it.`));
+                process.exit(1);
+            }
+            console.log(chalk.green(`Using branch "${branchName}".`));
         }
 
         // 4. Create the new worktree
