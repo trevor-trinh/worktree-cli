@@ -9,3 +9,12 @@
 - The CI workflow will not make any commits or version bumps
 - Version updates should be handled manually outside of CI
 - Make sure you have set up the `NPM_TOKEN` secret in your GitHub repository settings 
+
+## New Worktree Sibling Directory Test
+
+1. In a test repository, run:
+   ```bash
+   cursor-worktree new editor
+   ```
+2. Verify that a new sibling directory named `<currentDirectoryName>editor` is created.
+3. Confirm that the worktree is added to the Git repository and that the Cursor editor opens the new directory. 
