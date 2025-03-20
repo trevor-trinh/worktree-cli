@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/johnlindquist/worktree-cli/compare/v1.2.0...v1.2.1) (2025-03-20)
+
+
+### Bug Fixes
+
+* **new:** add dash ([7cbc3b3](https://github.com/johnlindquist/worktree-cli/commit/7cbc3b3aad0af07eccab703cc6546d58f1556b8f))
+
 # [1.2.0](https://github.com/johnlindquist/worktree-cli/compare/v1.1.0...v1.2.0) (2025-03-20)
 
 
