@@ -9,7 +9,7 @@ import { removeWorktreeHandler } from "./commands/remove.js";
 const program = new Command();
 
 program
-    .name("cursor-worktree")
+    .name("cwt")
     .description("Manage git worktrees and open them in the Cursor editor.")
     .version("1.0.0");
 
