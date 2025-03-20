@@ -1,17 +1,25 @@
 import { execa } from "execa";
 import chalk from "chalk";
-import { resolve } from "node:path";
+import { resolve, join, dirname, basename } from "node:path";
 export async function newWorktreeHandler(branchName = "main", options) {
     try {
         // 1. Validate we're in a git repo
         await execa("git", ["rev-parse", "--is-inside-work-tree"]);
         // 2. Build final path for the new worktree
-        const folderName = options.path ?? `./${branchName}-worktree`;
+        let folderName;
+        if (options.path) {
+            folderName = options.path;
+        }
+        else {
+            const currentDir = process.cwd();
+            const parentDir = dirname(currentDir);
+            const currentDirName = basename(currentDir);
+            // Create a sibling directory: current directory name concatenated with branchName
+            folderName = join(parentDir, `${currentDirName}-${branchName}`);
+        }
         const resolvedPath = resolve(folderName);
         // 3. (Optional) checkout new local branch if it doesn't exist yet
-        //    This step is only run if user passes `--checkout`
         if (options.checkout) {
-            // Check if branch already exists
             const { stdout } = await execa("git", ["branch", "--list", branchName]);
             if (!stdout) {
                 console.log(chalk.yellow(`Branch "${branchName}" doesn't exist locally. Creating...`));
@@ -22,17 +30,21 @@ export async function newWorktreeHandler(branchName = "main", options) {
             }
         }
         else {
-            // Ensure the branch is present, or you might want to skip this check
             console.log(chalk.gray(`Using branch "${branchName}". Make sure it exists (local or remote).`));
         }
         // 4. Create the new worktree
         console.log(chalk.blue(`Creating new worktree for branch "${branchName}" at: ${resolvedPath}`));
         await execa("git", ["worktree", "add", resolvedPath, branchName]);
-        // 5. Open in Cursor editor
-        //    (Assuming "cursor <path>" is how you open a folder in Cursor)
-        console.log(chalk.blue(`Opening ${resolvedPath} in Cursor...`));
-        await execa("cursor", [resolvedPath], { stdio: "inherit" });
-        console.log(chalk.green(`Worktree created and opened in Cursor successfully!`));
+        // 5. (Optional) Install dependencies if --install flag is provided
+        if (options.install) {
+            console.log(chalk.blue(`Installing dependencies using ${options.install} in ${resolvedPath}...`));
+            await execa(options.install, ["install"], { cwd: resolvedPath, stdio: "inherit" });
+        }
+        // 6. Open in the specified editor (or default to "cursor")
+        const editorCommand = options.editor || "cursor";
+        console.log(chalk.blue(`Opening ${resolvedPath} in ${editorCommand}...`));
+        await execa(editorCommand, [resolvedPath], { stdio: "inherit" });
+        console.log(chalk.green(`Worktree created, dependencies installed (if specified), and opened in ${editorCommand} successfully!`));
     }
     catch (error) {
         if (error instanceof Error) {

@@ -9,7 +9,7 @@ import { removeWorktreeHandler } from "./commands/remove.js";
 const program = new Command();
 
 program
-    .name("cursor-worktree")
+    .name("cwt")
     .description("Manage git worktrees and open them in the Cursor editor.")
     .version("1.0.0");
 
@@ -31,6 +31,7 @@ program
 program
     .command("remove")
     .argument("[pathOrBranch]", "Path of the worktree or branch to remove.")
+    .option("-f, --force", "Force removal of worktree and deletion of the folder", false)
     .description("Remove a specified worktree. Cleans up the .git/worktrees references.")
     .action(removeWorktreeHandler);
 
