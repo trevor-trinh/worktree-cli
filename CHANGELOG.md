@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/johnlindquist/worktree-cli/compare/v2.0.0...v2.0.1) (2025-03-20)
+
+
+### Bug Fixes
+
+* **new:** create branch ([207d601](https://github.com/johnlindquist/worktree-cli/commit/207d6011ff7a7835c4609aeb6fd8796addf05b1f))
+
 # [2.0.0](https://github.com/johnlindquist/worktree-cli/compare/v1.2.1...v2.0.0) (2025-03-20)
 
 
