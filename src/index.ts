@@ -5,6 +5,7 @@ import chalk from "chalk";
 import { newWorktreeHandler } from "./commands/new.js";
 import { listWorktreesHandler } from "./commands/list.js";
 import { removeWorktreeHandler } from "./commands/remove.js";
+import { mergeWorktreeHandler } from "./commands/merge.js";
 
 const program = new Command();
 
@@ -34,5 +35,12 @@ program
     .option("-f, --force", "Force removal of worktree and deletion of the folder", false)
     .description("Remove a specified worktree. Cleans up the .git/worktrees references.")
     .action(removeWorktreeHandler);
+
+program
+    .command("merge")
+    .argument("<branchName>", "Name of the branch to merge from")
+    .option("-f, --force", "Force removal of worktree after merge", false)
+    .description("Commit changes in the target branch and merge them into the current branch, then remove the branch/worktree")
+    .action(mergeWorktreeHandler);
 
 program.parse(process.argv); 
