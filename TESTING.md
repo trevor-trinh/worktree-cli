@@ -92,3 +92,26 @@
 - The CI workflow will not make any commits or version bumps
 - Version updates should be handled manually outside of CI
 - Make sure you have set up the `NPM_TOKEN` secret in your GitHub repository settings 
+
+## Manual Test for Purge Command
+
+1. **Setup Test Worktrees:**
+   - Create two new worktrees on branches other than main:
+     ```bash
+     wt new test-branch1
+     wt new test-branch2
+     ```
+2. **Execute Purge Command:**
+   - Run the purge command:
+     ```bash
+     wt purge
+     ```
+3. **Confirmation:**
+   - For each listed worktree, verify that the branch and path are displayed.
+   - When prompted, enter `y` to remove a worktree or any other key to skip.
+4. **Verification:**
+   - After purging, run:
+     ```bash
+     git worktree list
+     ```
+     Ensure that only the main branch worktree remains (or those you opted not to remove).

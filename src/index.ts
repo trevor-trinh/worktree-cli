@@ -6,6 +6,7 @@ import { newWorktreeHandler } from "./commands/new.js";
 import { listWorktreesHandler } from "./commands/list.js";
 import { removeWorktreeHandler } from "./commands/remove.js";
 import { mergeWorktreeHandler } from "./commands/merge.js";
+import { purgeWorktreesHandler } from "./commands/purge.js";
 
 const program = new Command();
 
@@ -42,5 +43,10 @@ program
     .option("-f, --force", "Force removal of worktree after merge", false)
     .description("Commit changes in the target branch and merge them into the current branch, then remove the branch/worktree")
     .action(mergeWorktreeHandler);
+
+program
+    .command("purge")
+    .description("Safely remove all worktrees except for the main branch, with confirmation.")
+    .action(purgeWorktreesHandler);
 
 program.parse(process.argv); 
