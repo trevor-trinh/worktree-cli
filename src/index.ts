@@ -18,7 +18,9 @@ program
     .argument("[branchName]", "Name of the branch to base this worktree on")
     .option("-p, --path <path>", "Relative path/folder name for new worktree")
     .option("-c, --checkout", "Create new branch if it doesn't exist and checkout automatically", false)
-    .description("Create a new worktree for the specified branch and open it in Cursor.")
+    .option("-i, --install <packageManager>", "Package manager to use for installing dependencies (npm, pnpm, bun, etc.)")
+    .option("-e, --editor <editor>", "Editor to use for opening the worktree (e.g., code, webstorm, windsurf, etc.)")
+    .description("Create a new worktree for the specified branch, install dependencies if specified, and open in editor.")
     .action(newWorktreeHandler);
 
 program

@@ -5,7 +5,7 @@ import { resolve, join, dirname, basename } from "node:path";
 
 export async function newWorktreeHandler(
     branchName: string = "main",
-    options: { path?: string; checkout?: boolean }
+    options: { path?: string; checkout?: boolean; install?: string; editor?: string }
 ) {
     try {
         // 1. Validate we're in a git repo
@@ -25,9 +25,7 @@ export async function newWorktreeHandler(
         const resolvedPath = resolve(folderName);
 
         // 3. (Optional) checkout new local branch if it doesn't exist yet
-        //    This step is only run if user passes `--checkout`
         if (options.checkout) {
-            // Check if branch already exists
             const { stdout } = await execa("git", ["branch", "--list", branchName]);
             if (!stdout) {
                 console.log(chalk.yellow(`Branch "${branchName}" doesn't exist locally. Creating...`));
@@ -36,7 +34,6 @@ export async function newWorktreeHandler(
                 console.log(chalk.green(`Branch "${branchName}" found locally.`));
             }
         } else {
-            // Ensure the branch is present, or you might want to skip this check
             console.log(chalk.gray(`Using branch "${branchName}". Make sure it exists (local or remote).`));
         }
 
@@ -44,12 +41,18 @@ export async function newWorktreeHandler(
         console.log(chalk.blue(`Creating new worktree for branch "${branchName}" at: ${resolvedPath}`));
         await execa("git", ["worktree", "add", resolvedPath, branchName]);
 
-        // 5. Open in Cursor editor
-        //    (Assuming "cursor <path>" is how you open a folder in Cursor)
-        console.log(chalk.blue(`Opening ${resolvedPath} in Cursor...`));
-        await execa("cursor", [resolvedPath], { stdio: "inherit" });
+        // 5. (Optional) Install dependencies if --install flag is provided
+        if (options.install) {
+            console.log(chalk.blue(`Installing dependencies using ${options.install} in ${resolvedPath}...`));
+            await execa(options.install, ["install"], { cwd: resolvedPath, stdio: "inherit" });
+        }
 
-        console.log(chalk.green(`Worktree created and opened in Cursor successfully!`));
+        // 6. Open in the specified editor (or default to "cursor")
+        const editorCommand = options.editor || "cursor";
+        console.log(chalk.blue(`Opening ${resolvedPath} in ${editorCommand}...`));
+        await execa(editorCommand, [resolvedPath], { stdio: "inherit" });
+
+        console.log(chalk.green(`Worktree created, dependencies installed (if specified), and opened in ${editorCommand} successfully!`));
     } catch (error) {
         if (error instanceof Error) {
             console.error(chalk.red("Failed to create new worktree:"), error.message);
