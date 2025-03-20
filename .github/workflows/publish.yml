@@ -9,24 +9,22 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org
           always-auth: true
-
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
       - name: Install dependencies
-        run: npm install
-
-      - name: Build the project
-        run: npm run build
-
-      # Semantic versioning is applied manually; CI does not commit any version changes.
-      - name: Publish package
+        run: pnpm install
+      - name: Build
+        run: pnpm run build
+      - name: Publish to npm
+        run: pnpm publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public --tag latest 
+
+      # Semantic versioning is applied manually; CI does not commit any version changes. 
