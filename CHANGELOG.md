@@ -1,3 +1,11 @@
+## [2.0.2](https://github.com/johnlindquist/worktree-cli/compare/v2.0.1...v2.0.2) (2025-03-20)
+
+
+### Bug Fixes
+
+* **build:** no commit ([914fc32](https://github.com/johnlindquist/worktree-cli/commit/914fc3226ded49891e0cb409aeffcb25782213ef))
+* **new:** create branch ([459e326](https://github.com/johnlindquist/worktree-cli/commit/459e326c5596b9c190bf5de2be00b777ed5cdda4))
+
 ## [2.0.1](https://github.com/johnlindquist/worktree-cli/compare/v2.0.0...v2.0.1) (2025-03-20)
 
 
