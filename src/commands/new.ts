@@ -20,7 +20,7 @@ export async function newWorktreeHandler(
             const parentDir = dirname(currentDir);
             const currentDirName = basename(currentDir);
             // Create a sibling directory: current directory name concatenated with branchName
-            folderName = join(parentDir, `${currentDirName}${branchName}`);
+            folderName = join(parentDir, `${currentDirName}-${branchName}`);
         }
         const resolvedPath = resolve(folderName);
 
