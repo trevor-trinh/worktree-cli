@@ -2,6 +2,7 @@ import { execa } from "execa";
 import chalk from "chalk";
 import { stat } from "node:fs/promises";
 import { resolve, join, dirname, basename } from "node:path";
+import { getDefaultEditor } from "../config.js";
 
 export async function newWorktreeHandler(
     branchName: string = "main",
@@ -77,12 +78,23 @@ export async function newWorktreeHandler(
             }
         }
 
-        // 6. Open in the specified editor (or default to "cursor")
-        const editorCommand = options.editor || "cursor";
+        // 6. Open in the specified editor (or use configured default)
+        const configuredEditor = getDefaultEditor();
+        const editorCommand = options.editor || configuredEditor; // Use option, then config, fallback is handled by config default
         console.log(chalk.blue(`Opening ${resolvedPath} in ${editorCommand}...`));
-        await execa(editorCommand, [resolvedPath], { stdio: "inherit" });
+        // Use try-catch to handle if the editor command fails
+        try {
+            await execa(editorCommand, [resolvedPath], { stdio: "inherit" });
+        } catch (editorError) {
+            console.error(chalk.red(`Failed to open editor "${editorCommand}". Please ensure it's installed and in your PATH.`));
+            // Decide if you want to exit or just warn. Let's warn for now.
+            console.warn(chalk.yellow(`Continuing without opening editor.`));
+        }
 
-        console.log(chalk.green(`Worktree ${directoryExists ? "opened" : "created"}, dependencies installed (if specified), and opened in ${editorCommand} successfully!`));
+        console.log(chalk.green(`Worktree ${directoryExists ? "opened" : "created"} at ${resolvedPath}.`));
+        if (!directoryExists && options.install) console.log(chalk.green(`Dependencies installed using ${options.install}.`));
+        console.log(chalk.green(`Attempted to open in ${editorCommand}.`));
+
     } catch (error) {
         if (error instanceof Error) {
             console.error(chalk.red("Failed to create new worktree:"), error.message);
