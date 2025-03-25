@@ -7,6 +7,7 @@ import { listWorktreesHandler } from "./commands/list.js";
 import { removeWorktreeHandler } from "./commands/remove.js";
 import { mergeWorktreeHandler } from "./commands/merge.js";
 import { purgeWorktreesHandler } from "./commands/purge.js";
+import { configHandler } from "./commands/config.js";
 
 const program = new Command();
 
@@ -48,5 +49,33 @@ program
     .command("purge")
     .description("Safely remove all worktrees except for the main branch, with confirmation.")
     .action(purgeWorktreesHandler);
+
+program
+    .command("config")
+    .description("Manage CLI configuration settings.")
+    .addCommand(
+        new Command("set")
+            .description("Set a configuration value.")
+            .addCommand(
+                new Command("editor")
+                    .argument("<editorName>", "Name of the editor command (e.g., code, cursor, webstorm)")
+                    .description("Set the default editor to open worktrees in.")
+                    .action((editorName) => configHandler('set', 'editor', editorName))
+            )
+    )
+    .addCommand(
+        new Command("get")
+            .description("Get a configuration value.")
+            .addCommand(
+                new Command("editor")
+                    .description("Get the currently configured default editor.")
+                    .action(() => configHandler('get', 'editor'))
+            )
+    )
+    .addCommand(
+        new Command("path")
+            .description("Show the path to the configuration file.")
+            .action(() => configHandler('path'))
+    );
 
 program.parse(process.argv); 

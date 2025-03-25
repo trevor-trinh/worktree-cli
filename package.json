@@ -17,14 +17,15 @@
 	"dependencies": {
 		"chalk": "^5.2.0",
 		"commander": "^10.0.1",
+		"conf": "^13.1.0",
 		"execa": "^7.1.1"
 	},
 	"devDependencies": {
-		"@types/node": "^18.0.0",
-		"typescript": "^5.0.2",
 		"@semantic-release/changelog": "^6.0.3",
 		"@semantic-release/git": "^10.0.1",
-		"semantic-release": "^23.0.2"
+		"@types/node": "^18.0.0",
+		"semantic-release": "^23.0.2",
+		"typescript": "^5.0.2"
 	},
 	"release": {
 		"branches": [
