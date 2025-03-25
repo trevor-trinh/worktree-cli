@@ -1,5 +1,13 @@
 import Conf from 'conf';
-import { name as packageName } from '../package.json';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Read package.json dynamically instead of using named imports
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const packageJsonPath = path.resolve(__dirname, '../package.json');
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+const packageName = packageJson.name;
 
 // Define the structure of the configuration
 interface ConfigSchema {
@@ -8,12 +16,12 @@ interface ConfigSchema {
 
 // Initialize conf with a schema and project name
 // Using the package name ensures a unique storage namespace
-const schema: Conf.Schema<ConfigSchema> = {
+const schema = {
     defaultEditor: {
         type: 'string',
         default: 'cursor', // Default editor is 'cursor'
     },
-};
+} as const;
 
 const config = new Conf<ConfigSchema>({
     projectName: packageName, // Use the actual package name
