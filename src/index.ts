@@ -28,11 +28,13 @@ program
 
 program
     .command("list")
+    .alias("ls")
     .description("List all existing worktrees for this repository.")
     .action(listWorktreesHandler);
 
 program
     .command("remove")
+    .alias("rm")
     .argument("[pathOrBranch]", "Path of the worktree or branch to remove.")
     .option("-f, --force", "Force removal of worktree and deletion of the folder", false)
     .description("Remove a specified worktree. Cleans up the .git/worktrees references.")
