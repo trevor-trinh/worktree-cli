@@ -17,11 +17,15 @@ export async function newWorktreeHandler(
         if (options.path) {
             folderName = options.path;
         } else {
+            // Derive the short name for the directory from the branch name
+            // This handles cases like 'feature/login' -> 'login'
+            const shortBranchName = branchName.split('/').filter(part => part.length > 0).pop() || branchName;
+
             const currentDir = process.cwd();
             const parentDir = dirname(currentDir);
             const currentDirName = basename(currentDir);
-            // Create a sibling directory: current directory name concatenated with branchName
-            folderName = join(parentDir, `${currentDirName}-${branchName}`);
+            // Create a sibling directory using the short branch name
+            folderName = join(parentDir, `${currentDirName}-${shortBranchName}`);
         }
         const resolvedPath = resolve(folderName);
 
