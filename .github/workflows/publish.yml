@@ -36,6 +36,9 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      - name: List dist contents
+        run: ls -lR dist
+
       # Optional: Add a test step here if you have tests
       # - name: Test
       #   run: pnpm test
@@ -44,6 +47,12 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Pack tarball locally for inspection
+        run: pnpm pack --pack-destination ./ci-pack
+
+      - name: List tarball contents
+        run: tar -tvf ./ci-pack/*.tgz
 
       - name: Release
         env:
