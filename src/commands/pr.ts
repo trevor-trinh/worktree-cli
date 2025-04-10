@@ -3,6 +3,7 @@ import chalk from "chalk";
 import { stat } from "node:fs/promises";
 import { resolve, join, dirname, basename } from "node:path";
 import { getDefaultEditor } from "../config.js";
+import { getCurrentBranch } from "../utils/git.js"; // Assuming a utility function
 
 // Helper function to get PR branch name using gh cli
 async function getBranchNameFromPR(prNumber: string): Promise<string> {
@@ -38,90 +39,158 @@ export async function prWorktreeHandler(
     prNumber: string,
     options: { path?: string; install?: string; editor?: string }
 ) {
+    let originalBranch: string | null = null;
     try {
         // 1. Validate we're in a git repo
         await execa("git", ["rev-parse", "--is-inside-work-tree"]);
 
-        // 2. Get Branch Name from PR Number using GitHub CLI ('gh')
+        // 2. Get current branch name to switch back later
+        originalBranch = await getCurrentBranch();
+        if (!originalBranch) {
+            throw new Error("Could not determine the current branch. Ensure you are in a valid git repository.");
+        }
+        console.log(chalk.blue(`Current branch is "${originalBranch}".`));
+
+
+        // 3. Get the target branch name from the PR (needed for worktree add)
         console.log(chalk.blue(`Fetching branch name for PR #${prNumber}...`));
-        const branchName = await getBranchNameFromPR(prNumber);
-        console.log(chalk.green(`Found branch name: "${branchName}"`));
+        const prBranchName = await getBranchNameFromPR(prNumber);
+        console.log(chalk.green(`PR head branch name: "${prBranchName}"`));
 
-        // 3. Fetch the latest changes for the branch from origin
-        console.log(chalk.blue(`Fetching latest changes for branch "${branchName}" from origin...`));
-        await execa("git", ["fetch", "origin", branchName]);
+        // 4. Use 'gh pr checkout' to fetch PR and setup tracking in the main worktree
+        console.log(chalk.blue(`Using 'gh pr checkout ${prNumber}' to fetch PR and set up local branch tracking...`));
+        try {
+            await execa("gh", ["pr", "checkout", prNumber], { stdio: 'pipe' }); // Use pipe to capture output/errors if needed
+            console.log(chalk.green(`Successfully checked out PR #${prNumber} branch "${prBranchName}" locally.`));
+        } catch (ghError: any) {
+            if (ghError.stderr?.includes("is already checked out")) {
+                console.log(chalk.yellow(`Branch "${prBranchName}" for PR #${prNumber} is already checked out.`));
+                // Attempt to switch to it to ensure tracking is potentially updated by gh
+                try {
+                    await execa("git", ["checkout", prBranchName], { stdio: 'pipe' });
+                } catch (checkoutError: any) {
+                    // If checkout fails (e.g., uncommitted changes), gh pr checkout would likely have failed too.
+                    // Rethrow the original gh error as it's more informative.
+                    throw ghError;
+                }
+            } else if (ghError.stderr?.includes("Could not find pull request")) {
+                throw new Error(`Pull Request #${prNumber} not found.`);
+            } else if (ghError.stderr?.includes("gh not found") || ghError.message?.includes("ENOENT")) {
+                throw new Error("GitHub CLI ('gh') not found. Please install it (brew install gh) and authenticate (gh auth login).");
+            } else {
+                console.error(chalk.red("Error during 'gh pr checkout':"), ghError.stderr || ghError.stdout || ghError.message);
+                throw new Error(`Failed to checkout PR using gh: ${ghError.message}`);
+            }
+        }
 
-        // 4. Build final path for the new worktree (similar to 'new' command)
+        // 5. Build final path for the new worktree
         let folderName: string;
         if (options.path) {
             folderName = options.path;
         } else {
-            // Use branch name for the directory
             const currentDir = process.cwd();
             const parentDir = dirname(currentDir);
             const currentDirName = basename(currentDir);
-            // Sanitize branch name slightly for directory use (replace slashes)
-            const sanitizedBranchName = branchName.replace(/\//g, '-');
+            const sanitizedBranchName = prBranchName.replace(/\//g, '-'); // Use PR branch name for consistency
             folderName = join(parentDir, `${currentDirName}-${sanitizedBranchName}`);
         }
         const resolvedPath = resolve(folderName);
 
-        // 5. Check if directory already exists
+        // 6. Check if directory already exists
         let directoryExists = false;
         try {
             await stat(resolvedPath);
             directoryExists = true;
         } catch (error) {
-            // Directory doesn't exist, continue with creation
+            // Directory doesn't exist, proceed
         }
 
+        let worktreeCreated = false;
         if (directoryExists) {
             console.log(chalk.yellow(`Directory already exists at: ${resolvedPath}`));
-            // Check if it's a git worktree
-            let isGitWorktree = false;
+            // Check if it's a git worktree linked to the correct branch
             try {
-                await stat(join(resolvedPath, ".git")); // .git is a file in worktrees
-                isGitWorktree = true;
-            } catch (error) { /* Not a worktree */ }
-
-            if (isGitWorktree) {
-                console.log(chalk.green(`Worktree for branch "${branchName}" seems to already exist.`));
-            } else {
-                console.error(chalk.red(`Error: Directory "${resolvedPath}" exists but is not a Git worktree. Please remove it or choose a different path using --path.`));
+                const worktreeList = await execa("git", ["worktree", "list", "--porcelain"]);
+                const worktreeInfo = worktreeList.stdout.split('\n\n').find(info => info.includes(`worktree ${resolvedPath}`));
+                if (worktreeInfo && worktreeInfo.includes(`branch refs/heads/${prBranchName}`)) {
+                    console.log(chalk.green(`Existing worktree found at ${resolvedPath} for branch "${prBranchName}".`));
+                } else if (worktreeInfo) {
+                    console.error(chalk.red(`Error: Directory "${resolvedPath}" is a worktree, but it's linked to a different branch, not "${prBranchName}".`));
+                    process.exit(1);
+                } else {
+                    // Directory exists but is not a worktree
+                    console.error(chalk.red(`Error: Directory "${resolvedPath}" exists but is not a Git worktree. Please remove it or choose a different path using --path.`));
+                    process.exit(1);
+                }
+            } catch (listError: any) {
+                console.error(chalk.red("Failed to verify existing worktree status."), listError);
                 process.exit(1);
             }
-            // If it exists and is a worktree, we'll just open it later.
         } else {
-            // 6. Create the worktree
-            console.log(chalk.blue(`Creating new worktree for branch "${branchName}" at: ${resolvedPath}`));
-            // We use the fetched branch directly. 'git worktree add' will create the worktree pointing to the fetched commit.
-            // It doesn't need -b as the branch already exists remotely and was fetched.
-            await execa("git", ["worktree", "add", resolvedPath, branchName]);
+            // 7. Create the worktree using the locally checked-out PR branch
+            console.log(chalk.blue(`Creating new worktree for branch "${prBranchName}" at: ${resolvedPath}`));
+            try {
+                // Use the PR branch name which 'gh pr checkout' created/updated locally
+                await execa("git", ["worktree", "add", resolvedPath, prBranchName]);
+                worktreeCreated = true;
+            } catch (worktreeError: any) {
+                console.error(chalk.red(`Failed to create worktree for branch "${prBranchName}" at ${resolvedPath}:`), worktreeError.stderr || worktreeError.message);
+                // Common error: branch checked out elsewhere (shouldn't happen with this flow ideally, but check)
+                if (worktreeError.stderr?.includes("is already checked out at")) {
+                    console.error(chalk.red(`Branch "${prBranchName}" might be checked out in another worktree.`));
+                }
+                throw worktreeError; // Rethrow to trigger finally block and cleanup
+            }
 
-            // 7. (Optional) Install dependencies if --install flag is provided
+            // 8. (Optional) Install dependencies
             if (options.install) {
                 console.log(chalk.blue(`Installing dependencies using ${options.install} in ${resolvedPath}...`));
-                await execa(options.install, ["install"], { cwd: resolvedPath, stdio: "inherit" });
+                // Add error handling for install step if desired
+                try {
+                    await execa(options.install, ["install"], { cwd: resolvedPath, stdio: "inherit" });
+                } catch (installError: any) {
+                    console.error(chalk.red(`Failed to install dependencies using ${options.install}:`), installError.message);
+                    // Decide if you want to continue or exit
+                    console.warn(chalk.yellow("Continuing without successful dependency installation."));
+                }
             }
         }
 
-        // 8. Open in the specified editor (or use configured default)
+        // 9. Open in editor
         const configuredEditor = getDefaultEditor();
         const editorCommand = options.editor || configuredEditor;
         console.log(chalk.blue(`Opening ${resolvedPath} in ${editorCommand}...`));
         try {
-            await execa(editorCommand, [resolvedPath], { stdio: "inherit" });
+            await execa(editorCommand, [resolvedPath], { stdio: "ignore", detached: true }); // Detach editor process
         } catch (editorError) {
             console.error(chalk.red(`Failed to open editor "${editorCommand}". Please ensure it's installed and in your PATH.`));
-            console.warn(chalk.yellow(`Continuing without opening editor.`));
+            console.warn(chalk.yellow(`Worktree is ready at ${resolvedPath}. You can open it manually.`));
         }
 
-        console.log(chalk.green(`Worktree for PR #${prNumber} (${branchName}) ${directoryExists ? "opened" : "created"} at ${resolvedPath}.`));
-        if (!directoryExists && options.install) console.log(chalk.green(`Dependencies installed using ${options.install}.`));
-        console.log(chalk.green(`Attempted to open in ${editorCommand}.`));
+        console.log(chalk.green(`✅ Worktree for PR #${prNumber} (${prBranchName}) ${worktreeCreated ? "created" : "found"} at ${resolvedPath}.`));
+        if (worktreeCreated && options.install) console.log(chalk.green(`   Dependencies installed using ${options.install}.`));
+        console.log(chalk.green(`   Ready for work. Use 'git push' inside the worktree directory to update the PR.`));
+
 
     } catch (error: any) {
-        console.error(chalk.red("Failed to create worktree from PR:"), error.message || error);
+        console.error(chalk.red("❌ Failed to set up worktree from PR:"), error.message || error);
+        if (error.stack && !(error.stderr || error.stdout)) { // Avoid printing stack for execa errors if stderr/stdout is present
+            console.error(error.stack);
+        }
         process.exit(1);
+    } finally {
+        // 10. Switch back to the original branch in the main worktree
+        if (originalBranch) {
+            try {
+                const currentBranchNow = await getCurrentBranch();
+                if (currentBranchNow !== originalBranch) {
+                    console.log(chalk.blue(`Switching main worktree back to "${originalBranch}"...`));
+                    await execa("git", ["checkout", originalBranch]);
+                }
+            } catch (checkoutError: any) {
+                console.warn(chalk.yellow(`⚠️ Warning: Failed to switch main worktree back to original branch "${originalBranch}". Please check manually.`));
+                console.warn(checkoutError.stderr || checkoutError.message);
+            }
+        }
     }
 } 

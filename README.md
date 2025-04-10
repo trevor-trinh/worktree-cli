@@ -35,7 +35,11 @@ wt new feature/vscode -e code
 ```bash
 wt pr <prNumber> [options]
 ```
-Fetches the branch associated with the given GitHub Pull Request number and creates a worktree for it. **Requires GitHub CLI (`gh`) to be installed and authenticated.**
+Uses the GitHub CLI (`gh`) to check out the branch associated with the given Pull Request number, sets it up locally to track the correct remote branch (handling forks automatically), and then creates a worktree for it.
+
+**Benefit:** Commits made in this worktree can be pushed directly using `git push` to update the Pull Request.
+
+**Requires GitHub CLI (`gh`) to be installed and authenticated.**
 
 Options:
 - `-p, --path <path>`: Specify a custom path for the worktree (defaults to `<repoName>-<branchName>`)
