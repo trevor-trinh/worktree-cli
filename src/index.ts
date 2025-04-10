@@ -8,6 +8,7 @@ import { removeWorktreeHandler } from "./commands/remove.js";
 import { mergeWorktreeHandler } from "./commands/merge.js";
 import { purgeWorktreesHandler } from "./commands/purge.js";
 import { configHandler } from "./commands/config.js";
+import { prWorktreeHandler } from "./commands/pr.js";
 
 const program = new Command();
 
@@ -51,6 +52,15 @@ program
     .command("purge")
     .description("Safely remove all worktrees except for the main branch, with confirmation.")
     .action(purgeWorktreesHandler);
+
+program
+    .command("pr")
+    .argument("<prNumber>", "GitHub Pull Request number to create a worktree from")
+    .option("-p, --path <path>", "Specify a custom path for the worktree (defaults to repoName-branchName)")
+    .option("-i, --install <packageManager>", "Package manager to use for installing dependencies (npm, pnpm, bun, etc.)")
+    .option("-e, --editor <editor>", "Editor to use for opening the worktree (overrides default editor)")
+    .description("Fetch the branch for a given GitHub PR number and create a worktree.")
+    .action(prWorktreeHandler);
 
 program
     .command("config")

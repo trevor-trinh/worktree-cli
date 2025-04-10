@@ -10,12 +10,11 @@ pnpm install -g @johnlindquist/worktree
 
 ## Usage
 
-### Create a new worktree
+### Create a new worktree from Branch Name
 
 ```bash
 wt new <branchName> [options]
 ```
-
 Options:
 - `-p, --path <path>`: Specify a custom path for the worktree
 - `-c, --checkout`: Create new branch if it doesn't exist and checkout automatically
@@ -29,6 +28,27 @@ wt new feature/chat --checkout
 wt new feature/auth -p ./auth-worktree
 wt new feature/deps -i pnpm
 wt new feature/vscode -e code
+```
+
+### Create a new worktree from Pull Request Number
+
+```bash
+wt pr <prNumber> [options]
+```
+Fetches the branch associated with the given GitHub Pull Request number and creates a worktree for it. **Requires GitHub CLI (`gh`) to be installed and authenticated.**
+
+Options:
+- `-p, --path <path>`: Specify a custom path for the worktree (defaults to `<repoName>-<branchName>`)
+- `-i, --install <packageManager>`: Package manager to use for installing dependencies (npm, pnpm, bun, etc.)
+- `-e, --editor <editor>`: Editor to use for opening the worktree (overrides default editor)
+
+Example:
+```bash
+# Create worktree for PR #123
+wt pr 123
+
+# Create worktree for PR #456, install deps with pnpm, open in vscode
+wt pr 456 -i pnpm -e code
 ```
 
 ### Configure Default Editor
@@ -76,6 +96,7 @@ wt remove feature/chat
 - Git
 - Node.js
 - An editor installed and available in PATH (defaults to Cursor)
+- **GitHub CLI (`gh`) installed and authenticated (for `wt pr` command)**
 
 ## Development
 
