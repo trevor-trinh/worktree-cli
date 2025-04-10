@@ -45,8 +45,8 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      - name: List dist contents
-        run: ls -lR dist
+      - name: List build contents
+        run: ls -lR build
 
       # Optional: Add a test step here if you have tests
       # - name: Test

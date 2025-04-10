@@ -4,7 +4,7 @@
     "module": "Node16",
     "moduleResolution": "node16",
     "rootDir": "src",
-    "outDir": "dist",
+    "outDir": "build",
     "strict": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,

@@ -30,4 +30,4 @@ tsconfig.json
 .vscode/
 
 # Explicitly include the distribution directory
-!dist
+!build

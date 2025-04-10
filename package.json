@@ -7,11 +7,11 @@
 	"license": "MIT",
 	"type": "module",
 	"bin": {
-		"wt": "dist/index.js"
+		"wt": "build/index.js"
 	},
 	"scripts": {
-		"build": "tsc && cp package.json dist/package.json",
-		"start": "node dist/index.js",
+		"build": "tsc",
+		"start": "node build/index.js",
 		"dev": "tsc -w",
 		"test": "vitest run",
 		"semantic-release": "semantic-release"
@@ -41,9 +41,7 @@
 		"plugins": [
 			"@semantic-release/commit-analyzer",
 			"@semantic-release/release-notes-generator",
-			["@semantic-release/npm", {
-			  "pkgRoot": "dist"
-			}],
+			"@semantic-release/npm",
 			"@semantic-release/github"
 		]
 	},
@@ -51,6 +49,6 @@
 		"access": "public"
 	},
 	"files": [
-		"dist"
+		"build"
 	]
 }
