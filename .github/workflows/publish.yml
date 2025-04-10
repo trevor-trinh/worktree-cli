@@ -24,11 +24,16 @@ jobs:
           fetch-depth: 0 # Essential for semantic-release to analyze history
           persist-credentials: false # Recommended practice
 
+      # Remove explicit Node setup - pnpm/action-setup handles it
+      # - name: Setup Node.js
+      #   uses: actions/setup-node@v4
+      #   with:
+      #     node-version: 20 
+      #     cache: 'pnpm'
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         # Version is read from package.json's "packageManager" field
-        # with:
-        #   version: 9
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
