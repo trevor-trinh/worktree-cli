@@ -1,6 +1,6 @@
 {
 	"name": "@johnlindquist/worktree",
-	"version": "2.0.2",
+	"version": "0.0.0-development",
 	"description": "A CLI tool for managing Git worktrees with a focus on opening them in the Cursor editor.",
 	"author": "Your Name",
 	"license": "MIT",
@@ -23,7 +23,10 @@
 	},
 	"devDependencies": {
 		"@semantic-release/changelog": "^6.0.3",
-		"@semantic-release/git": "^10.0.1",
+		"@semantic-release/commit-analyzer": "^11.1.0",
+		"@semantic-release/github": "^9.2.6",
+		"@semantic-release/npm": "^11.0.2",
+		"@semantic-release/release-notes-generator": "^12.1.0",
 		"@types/node": "^18.0.0",
 		"@vitest/coverage-v8": "^3.1.1",
 		"semantic-release": "^23.0.2",
@@ -37,11 +40,14 @@
 		"plugins": [
 			"@semantic-release/commit-analyzer",
 			"@semantic-release/release-notes-generator",
-			"@semantic-release/changelog",
-			"@semantic-release/npm"
+			"@semantic-release/npm",
+			"@semantic-release/github"
 		]
 	},
 	"publishConfig": {
 		"access": "public"
-	}
+	},
+	"files": [
+		"dist"
+	]
 }
