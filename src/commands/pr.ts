@@ -65,14 +65,8 @@ export async function prWorktreeHandler(
         } catch (ghError: any) {
             if (ghError.stderr?.includes("is already checked out")) {
                 console.log(chalk.yellow(`Branch "${prBranchName}" for PR #${prNumber} is already checked out.`));
-                // Attempt to switch to it to ensure tracking is potentially updated by gh
-                try {
-                    await execa("git", ["checkout", prBranchName], { stdio: 'pipe' });
-                } catch (checkoutError: any) {
-                    // If checkout fails (e.g., uncommitted changes), gh pr checkout would likely have failed too.
-                    // Rethrow the original gh error as it's more informative.
-                    throw ghError;
-                }
+                // It's already checked out, we might not need to switch, but ensure tracking is set
+                // 'gh pr checkout' likely handled tracking. We'll proceed.
             } else if (ghError.stderr?.includes("Could not find pull request")) {
                 throw new Error(`Pull Request #${prNumber} not found.`);
             } else if (ghError.stderr?.includes("gh not found") || ghError.message?.includes("ENOENT")) {
@@ -80,6 +74,25 @@ export async function prWorktreeHandler(
             } else {
                 console.error(chalk.red("Error during 'gh pr checkout':"), ghError.stderr || ghError.stdout || ghError.message);
                 throw new Error(`Failed to checkout PR using gh: ${ghError.message}`);
+            }
+        }
+
+        // 4.5 Switch back to original branch IMMEDIATELY after gh checkout ensures the main worktree is clean
+        if (originalBranch) {
+            try {
+                const currentBranchAfterGh = await getCurrentBranch();
+                if (currentBranchAfterGh === prBranchName && currentBranchAfterGh !== originalBranch) {
+                    console.log(chalk.blue(`Switching main worktree back to "${originalBranch}" before creating worktree...`));
+                    await execa("git", ["checkout", originalBranch]);
+                } else if (currentBranchAfterGh !== originalBranch) {
+                    console.log(chalk.yellow(`Current branch is ${currentBranchAfterGh}, not ${prBranchName}. Assuming gh handled checkout correctly.`));
+                    // If gh failed but left us on a different branch, still try to go back
+                    await execa("git", ["checkout", originalBranch]);
+                }
+            } catch (checkoutError: any) {
+                console.warn(chalk.yellow(`⚠️ Warning: Failed to switch main worktree back to original branch "${originalBranch}" after gh checkout. Please check manually.`));
+                console.warn(checkoutError.stderr || checkoutError.message);
+                // Proceed with caution, worktree add might fail
             }
         }
 
@@ -127,19 +140,21 @@ export async function prWorktreeHandler(
                 process.exit(1);
             }
         } else {
-            // 7. Create the worktree using the locally checked-out PR branch
+            // 7. Create the worktree using the PR branch (now only fetched/tracked, not checked out here)
             console.log(chalk.blue(`Creating new worktree for branch "${prBranchName}" at: ${resolvedPath}`));
             try {
-                // Use the PR branch name which 'gh pr checkout' created/updated locally
+                // Use the PR branch name which 'gh pr checkout' fetched/tracked locally
                 await execa("git", ["worktree", "add", resolvedPath, prBranchName]);
                 worktreeCreated = true;
             } catch (worktreeError: any) {
-                console.error(chalk.red(`Failed to create worktree for branch "${prBranchName}" at ${resolvedPath}:`), worktreeError.stderr || worktreeError.message);
-                // Common error: branch checked out elsewhere (shouldn't happen with this flow ideally, but check)
-                if (worktreeError.stderr?.includes("is already checked out at")) {
-                    console.error(chalk.red(`Branch "${prBranchName}" might be checked out in another worktree.`));
+                // The "already checked out" error should ideally not happen with the new flow.
+                // Handle other potential worktree add errors.
+                console.error(chalk.red(`❌ Failed to create worktree for branch "${prBranchName}" at ${resolvedPath}:`), worktreeError.stderr || worktreeError.message);
+                // Suggest checking if the branch exists locally if it fails
+                if (worktreeError.stderr?.includes("fatal:")) {
+                    console.error(chalk.cyan(`   Suggestion: Verify branch "${prBranchName}" exists locally ('git branch') and the path "${resolvedPath}" is valid and empty.`));
                 }
-                throw worktreeError; // Rethrow to trigger finally block and cleanup
+                throw worktreeError; // Rethrow to trigger main catch block and cleanup
             }
 
             // 8. (Optional) Install dependencies
@@ -179,17 +194,21 @@ export async function prWorktreeHandler(
         }
         process.exit(1);
     } finally {
-        // 10. Switch back to the original branch in the main worktree
+        // 10. Ensure we are back on the original branch in the main worktree
+        // This is now mostly a safeguard, as we attempted to switch back earlier.
         if (originalBranch) {
             try {
                 const currentBranchNow = await getCurrentBranch();
                 if (currentBranchNow !== originalBranch) {
-                    console.log(chalk.blue(`Switching main worktree back to "${originalBranch}"...`));
+                    console.log(chalk.blue(`Ensuring main worktree is back on "${originalBranch}"...`));
                     await execa("git", ["checkout", originalBranch]);
                 }
             } catch (checkoutError: any) {
-                console.warn(chalk.yellow(`⚠️ Warning: Failed to switch main worktree back to original branch "${originalBranch}". Please check manually.`));
-                console.warn(checkoutError.stderr || checkoutError.message);
+                // Don't warn again if the previous attempt already warned
+                if (!checkoutError.message.includes("already warned")) { // Avoid redundant warnings
+                    console.warn(chalk.yellow(`⚠️ Warning: Final check failed to switch main worktree back to original branch "${originalBranch}". Please check manually.`));
+                    console.warn(checkoutError.stderr || checkoutError.message);
+                }
             }
         }
     }
