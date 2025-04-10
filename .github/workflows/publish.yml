@@ -21,6 +21,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.sha }} # Explicitly checkout the triggering commit SHA
           fetch-depth: 0 # Essential for semantic-release to analyze history
           persist-credentials: false # Recommended practice
 
