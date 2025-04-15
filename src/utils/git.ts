@@ -39,4 +39,30 @@ export async function isWorktreeClean(worktreePath: string = "."): Promise<boole
     }
 }
 
-// Add other git-related utilities here in the future 
+// Add other git-related utilities here in the future
+
+export async function isMainRepoBare(cwd: string = '.'): Promise<boolean> {
+    try {
+        // Find the root of the git repository
+        const { stdout: gitDir } = await execa('git', ['-C', cwd, 'rev-parse', '--git-dir']);
+        const mainRepoDir = gitDir.endsWith('/.git') ? gitDir.slice(0, -5) : gitDir; // Handle bare repo paths vs normal .git
+
+        // Check the core.bare setting specifically for that repository path
+        const { stdout: bareConfig } = await execa('git', ['config', '--get', '--bool', 'core.bare'], {
+            cwd: mainRepoDir, // Check config in the main repo dir, not the potentially detached worktree CWD
+        });
+
+        // stdout will be 'true' or 'false' as a string
+        return bareConfig.trim() === 'true';
+    } catch (error: any) {
+        // If the command fails (e.g., not a git repo, or config not set),
+        // assume it's not bare, but log a warning.
+        // A non-existent core.bare config defaults to false.
+        if (error.exitCode === 1 && error.stdout === '' && error.stderr === '') {
+            // This specific exit code/output means the config key doesn't exist, which is fine (defaults to false).
+            return false;
+        }
+        console.warn(chalk.yellow(`Could not reliably determine if the main repository is bare. Proceeding cautiously. Error:`), error.stderr || error.message);
+        return false; // Default to non-bare to avoid blocking unnecessarily, but warn the user.
+    }
+} 
