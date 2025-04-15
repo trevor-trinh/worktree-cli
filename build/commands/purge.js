@@ -1,10 +1,9 @@
-import { execa, ExecaError } from "execa";
+import { execa } from "execa";
 import chalk from "chalk";
 import { stat, rm } from "node:fs/promises";
 import readline from "node:readline";
-
 // Utility function for interactive confirmation
-function askQuestion(query: string): Promise<string> {
+function askQuestion(query) {
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
@@ -14,44 +13,37 @@ function askQuestion(query: string): Promise<string> {
         resolve(ans);
     }));
 }
-
 export async function purgeWorktreesHandler() {
     try {
         // Ensure we're in a Git repository
         await execa("git", ["rev-parse", "--is-inside-work-tree"]);
-
         // Retrieve worktree list in porcelain format
         const { stdout } = await execa("git", ["worktree", "list", "--porcelain"]);
         const lines = stdout.split("\n");
-        const worktrees: { path: string; branch: string }[] = [];
+        const worktrees = [];
         let currentPath = "";
-
         // Parse worktree information from porcelain output
         for (const line of lines) {
             if (line.startsWith("worktree ")) {
                 currentPath = line.replace("worktree ", "").trim();
-            } else if (line.startsWith("branch ")) {
+            }
+            else if (line.startsWith("branch ")) {
                 const fullBranch = line.replace("branch ", "").trim();
                 const branch = fullBranch.replace("refs/heads/", "");
                 worktrees.push({ path: currentPath, branch });
             }
         }
-
         if (worktrees.length === 0) {
             console.log(chalk.yellow("No worktrees found."));
             return;
         }
-
         // Filter out the main branch worktree
         const purgeWorktrees = worktrees.filter((wt) => wt.branch !== "main");
-
         if (purgeWorktrees.length === 0) {
             console.log(chalk.green("No worktrees to purge (only main remains)."));
             return;
         }
-
         console.log(chalk.blue(`Found ${purgeWorktrees.length} worktree(s) to potentially purge:`));
-
         // Loop through each worktree and ask for confirmation before removal
         for (const wt of purgeWorktrees) {
             console.log(chalk.blue(`Worktree: Branch "${wt.branch}" at path "${wt.path}"`));
@@ -64,14 +56,12 @@ export async function purgeWorktreesHandler() {
                     await execa("git", ["worktree", "remove", wt.path]);
                     console.log(chalk.green(`Removed worktree metadata for ${wt.path}.`));
                     removedSuccessfully = true; // Mark as successfully removed by git command
-
-                } catch (removeError: unknown) { // Catch potential errors
-                    const execaError = removeError as ExecaError; // Type assertion
+                }
+                catch (removeError) { // Catch potential errors
+                    const execaError = removeError; // Type assertion
                     const stderr = execaError?.stderr || '';
                     const message = execaError?.message || String(removeError);
-
                     // --- Enhanced Error Handling ---
-
                     if (stderr.includes("modified or untracked files")) {
                         // Specific handling for dirty worktrees
                         console.log(chalk.yellow(`Worktree contains modified or untracked files.`));
@@ -81,16 +71,19 @@ export async function purgeWorktreesHandler() {
                                 await execa("git", ["worktree", "remove", "--force", wt.path]);
                                 console.log(chalk.green(`Force removed worktree metadata for ${wt.path}.`));
                                 removedSuccessfully = true; // Mark as successfully removed by git command
-                            } catch (forceError: unknown) {
-                                const forceExecaError = forceError as ExecaError;
+                            }
+                            catch (forceError) {
+                                const forceExecaError = forceError;
                                 console.error(chalk.red(`Failed to force remove worktree metadata for "${wt.branch}":`), forceExecaError.stderr || forceExecaError.message);
                                 // Do not attempt rm -rf if even force remove failed
                             }
-                        } else {
+                        }
+                        else {
                             console.log(chalk.yellow(`Skipping removal for worktree "${wt.branch}".`));
                             // continue; // Skip to next worktree if not forcing
                         }
-                    } else if (stderr.includes("fatal: validation failed") && stderr.includes("is not a .git file")) {
+                    }
+                    else if (stderr.includes("fatal: validation failed") && stderr.includes("is not a .git file")) {
                         // Specific handling for the validation error
                         console.error(chalk.red(`❌ Error removing worktree for branch "${wt.branch}" at "${wt.path}".`));
                         console.error(chalk.red(`   Git detected an inconsistency: The directory exists, but its '.git' file is missing, corrupted, or not what Git expected.`));
@@ -103,14 +96,13 @@ export async function purgeWorktreesHandler() {
                         console.log(chalk.yellow(`   Skipping automatic folder deletion for this inconsistent worktree.`));
                         // Do not set removedSuccessfully = true
                         // Do not attempt rm -rf below for this case
-
-                    } else {
+                    }
+                    else {
                         // Generic error handling for other 'git worktree remove' failures
                         console.error(chalk.red(`Failed to remove worktree metadata for "${wt.branch}":`), stderr || message);
                         // Do not attempt rm -rf if git remove failed unexpectedly
                     }
                 } // End of inner try-catch for git worktree remove
-
                 // --- Optional Folder Deletion (Only if Git remove succeeded) ---
                 if (removedSuccessfully) {
                     // Optionally remove the physical directory if it still exists *after* git remove succeeded
@@ -119,31 +111,35 @@ export async function purgeWorktreesHandler() {
                         console.log(chalk.blue(`Attempting to delete folder ${wt.path}...`));
                         await rm(wt.path, { recursive: true, force: true });
                         console.log(chalk.green(`Deleted folder ${wt.path}.`));
-                    } catch (statError: any) {
+                    }
+                    catch (statError) {
                         // If stat fails with 'ENOENT', the directory doesn't exist, which is fine.
                         if (statError.code !== 'ENOENT') {
                             console.warn(chalk.yellow(`Could not check or delete folder ${wt.path}: ${statError.message}`));
-                        } else {
+                        }
+                        else {
                             // Directory already gone, maybe git remove --force deleted it, or it was never there
                             console.log(chalk.grey(`Folder ${wt.path} does not exist or was already removed.`));
                         }
                     }
-                } else {
+                }
+                else {
                     console.log(chalk.yellow(`Skipping folder deletion for "${wt.path}" because Git worktree removal did not complete successfully.`));
                 }
-
-            } else {
+            }
+            else {
                 console.log(chalk.yellow(`Skipping removal for worktree "${wt.branch}".`));
             }
         } // End of for loop
-
         console.log(chalk.green("Purge command finished."));
-    } catch (error) { // Outer catch for initial git worktree list or other setup errors
+    }
+    catch (error) { // Outer catch for initial git worktree list or other setup errors
         if (error instanceof Error) {
             console.error(chalk.red("Failed during purge operation:"), error.message);
-        } else {
+        }
+        else {
             console.error(chalk.red("Failed during purge operation:"), error);
         }
         process.exit(1);
     }
-} 
+}
