@@ -10,6 +10,7 @@ import { purgeWorktreesHandler } from "./commands/purge.js";
 import { configHandler } from "./commands/config.js";
 import { prWorktreeHandler } from "./commands/pr.js";
 import { openWorktreeHandler } from "./commands/open.js";
+import { extractWorktreeHandler } from "./commands/extract.js";
 
 const program = new Command();
 
@@ -108,6 +109,23 @@ program
   )
   .description("Open an existing worktree in the editor.")
   .action(openWorktreeHandler);
+
+program
+  .command("extract")
+  .argument("[branchName]", "Name of the branch to extract (defaults to current branch)")
+  .option("-p, --path <path>", "Relative path/folder name for the worktree")
+  .option(
+    "-i, --install <packageManager>",
+    "Package manager to use for installing dependencies (npm, pnpm, bun, etc.)"
+  )
+  .option(
+    "-e, --editor <editor>",
+    "Editor to use for opening the worktree (overrides default editor)"
+  )
+  .description(
+    "Extract an existing branch as a new worktree. If no branch is specified, extracts the current branch."
+  )
+  .action(extractWorktreeHandler);
 
 program
   .command("config")
