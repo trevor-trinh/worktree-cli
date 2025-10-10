@@ -77,6 +77,43 @@ wt config path
 
 The default editor will be used when creating new worktrees unless overridden with the `-e` flag.
 
+### Setup Worktree Commands
+
+You can define setup commands in one of two locations to automatically execute them when creating a new worktree:
+
+1. **Cursor's format**: `.cursor/worktrees.json` in the repository root
+2. **Generic format**: `worktrees.json` in the repository root
+
+The tool checks for `.cursor/worktrees.json` first, then falls back to `worktrees.json`.
+
+#### Format Options:
+
+**Option 1: `worktrees.json` (recommended for new projects):**
+```json
+{
+  "setup-worktree": [
+    "npm install",
+    "cp $ROOT_WORKTREE_PATH/.local.env .local.env",
+    "echo 'Setup complete'"
+  ]
+}
+```
+
+**Option 2: `.cursor/worktrees.json` (Cursor's native format):**
+```json
+[
+  "npm install",
+  "cp $ROOT_WORKTREE_PATH/.local.env .local.env",
+  "echo 'Setup complete'"
+]
+```
+
+- Commands are executed in the new worktree directory.
+- The `$ROOT_WORKTREE_PATH` environment variable is available, pointing to the main repository root.
+- Commands run with shell execution, so complex commands and piping are supported.
+- If a command fails, the error is logged, but setup continues with the next command.
+- The setup runs after worktree creation but before dependency installation (if `--install` is used).
+
 ### List worktrees
 
 ```bash

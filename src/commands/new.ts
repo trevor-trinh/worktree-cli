@@ -1,9 +1,10 @@
 import { execa } from "execa";
 import chalk from "chalk";
 import { stat } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { resolve, join, dirname, basename } from "node:path";
 import { getDefaultEditor } from "../config.js";
-import { isWorktreeClean, isMainRepoBare } from "../utils/git.js";
+import { isWorktreeClean, isMainRepoBare, getRepoRoot } from "../utils/git.js";
 
 export async function newWorktreeHandler(
     branchName: string = "main",
@@ -94,7 +95,64 @@ export async function newWorktreeHandler(
                 await execa("git", ["worktree", "add", resolvedPath, branchName]);
             }
 
-            // 5. (Optional) Install dependencies if --install flag is provided
+            // 5. Execute setup-worktree commands if setup file exists
+            const repoRoot = await getRepoRoot();
+            if (repoRoot) {
+                let setupFilePath: string | null = null;
+                let setupData: any = null;
+
+                // Check for Cursor's worktrees.json first
+                const cursorSetupPath = join(repoRoot, ".cursor", "worktrees.json");
+                try {
+                    await stat(cursorSetupPath);
+                    setupFilePath = cursorSetupPath;
+                } catch (error) {
+                    // Check for worktrees.json
+                    const fallbackSetupPath = join(repoRoot, "worktrees.json");
+                    try {
+                        await stat(fallbackSetupPath);
+                        setupFilePath = fallbackSetupPath;
+                    } catch (error) {
+                        // No setup file found, skip
+                    }
+                }
+
+                if (setupFilePath) {
+                    try {
+                        console.log(chalk.blue(`Found setup file: ${setupFilePath}, executing setup commands...`));
+                        const setupContent = await readFile(setupFilePath, "utf-8");
+                        setupData = JSON.parse(setupContent);
+                        
+                        let commands: string[] = [];
+                        if (Array.isArray(setupData["setup-worktree"])) {
+                            commands = setupData["setup-worktree"];
+                        } else if (setupFilePath.includes("worktrees.json") && Array.isArray(setupData)) {
+                            // Handle Cursor's format if it's just an array
+                            commands = setupData;
+                        }
+
+                        if (commands.length > 0) {
+                            const env = { ...process.env, ROOT_WORKTREE_PATH: repoRoot };
+                            for (const command of commands) {
+                                console.log(chalk.gray(`Executing: ${command}`));
+                                try {
+                                    await execa(command, { shell: true, cwd: resolvedPath, env, stdio: "inherit" });
+                                } catch (cmdError: any) {
+                                    console.error(chalk.red(`Setup command failed: ${command}`), cmdError.message);
+                                    // Continue with other commands
+                                }
+                            }
+                            console.log(chalk.green("Setup commands completed."));
+                        } else {
+                            console.warn(chalk.yellow(`${setupFilePath} does not contain valid setup commands.`));
+                        }
+                    } catch (error: any) {
+                        console.warn(chalk.yellow(`Failed to parse setup file ${setupFilePath}:`), error.message);
+                    }
+                }
+            }
+
+            // 6. (Optional) Install dependencies if --install flag is provided
             if (options.install) {
                 console.log(chalk.blue(`Installing dependencies using ${options.install} in ${resolvedPath}...`));
                 await execa(options.install, ["install"], { cwd: resolvedPath, stdio: "inherit" });
