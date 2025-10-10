@@ -103,7 +103,7 @@ export async function newWorktreeHandler(
                     "setup-worktree"?: string[];
                     [key: string]: unknown;
                 }
-                let setupData: WorktreeSetupData | null = null;
+                let setupData: WorktreeSetupData | string[] | null = null;
 
                 // Check for Cursor's worktrees.json first
                 const cursorSetupPath = join(repoRoot, ".cursor", "worktrees.json");
@@ -128,7 +128,7 @@ export async function newWorktreeHandler(
                         setupData = JSON.parse(setupContent);
                         
                         let commands: string[] = [];
-                        if (setupData && Array.isArray(setupData["setup-worktree"])) {
+                        if (setupData && typeof setupData === 'object' && !Array.isArray(setupData) && Array.isArray(setupData["setup-worktree"])) {
                             commands = setupData["setup-worktree"];
                         } else if (setupFilePath.includes("worktrees.json") && Array.isArray(setupData)) {
                             // Handle Cursor's format if it's just an array

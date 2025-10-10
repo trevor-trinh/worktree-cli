@@ -114,7 +114,7 @@ export async function newWorktreeHandler(branchName = "main", options) {
                         const setupContent = await readFile(setupFilePath, "utf-8");
                         setupData = JSON.parse(setupContent);
                         let commands = [];
-                        if (setupData && Array.isArray(setupData["setup-worktree"])) {
+                        if (setupData && typeof setupData === 'object' && !Array.isArray(setupData) && Array.isArray(setupData["setup-worktree"])) {
                             commands = setupData["setup-worktree"];
                         }
                         else if (setupFilePath.includes("worktrees.json") && Array.isArray(setupData)) {
