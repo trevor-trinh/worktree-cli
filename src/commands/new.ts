@@ -99,7 +99,11 @@ export async function newWorktreeHandler(
             const repoRoot = await getRepoRoot();
             if (repoRoot) {
                 let setupFilePath: string | null = null;
-                let setupData: any = null;
+                interface WorktreeSetupData {
+                    "setup-worktree"?: string[];
+                    [key: string]: unknown;
+                }
+                let setupData: WorktreeSetupData | null = null;
 
                 // Check for Cursor's worktrees.json first
                 const cursorSetupPath = join(repoRoot, ".cursor", "worktrees.json");
@@ -124,7 +128,7 @@ export async function newWorktreeHandler(
                         setupData = JSON.parse(setupContent);
                         
                         let commands: string[] = [];
-                        if (Array.isArray(setupData["setup-worktree"])) {
+                        if (setupData && Array.isArray(setupData["setup-worktree"])) {
                             commands = setupData["setup-worktree"];
                         } else if (setupFilePath.includes("worktrees.json") && Array.isArray(setupData)) {
                             // Handle Cursor's format if it's just an array
@@ -132,22 +136,43 @@ export async function newWorktreeHandler(
                         }
 
                         if (commands.length > 0) {
+                            // Define an allowlist of safe commands
+                            const allowedCommands = [
+                                "npm install",
+                                "yarn install", 
+                                "pnpm install",
+                                "git submodule update --init --recursive"
+                                // Add more allowed commands as needed
+                            ];
                             const env = { ...process.env, ROOT_WORKTREE_PATH: repoRoot };
                             for (const command of commands) {
-                                console.log(chalk.gray(`Executing: ${command}`));
-                                try {
-                                    await execa(command, { shell: true, cwd: resolvedPath, env, stdio: "inherit" });
-                                } catch (cmdError: any) {
-                                    console.error(chalk.red(`Setup command failed: ${command}`), cmdError.message);
-                                    // Continue with other commands
+                                // Only execute if the command is in the allowlist
+                                if (allowedCommands.includes(command)) {
+                                    console.log(chalk.gray(`Executing: ${command}`));
+                                    try {
+                                        await execa(command, { shell: true, cwd: resolvedPath, env, stdio: "inherit" });
+                                    } catch (cmdError: unknown) {
+                                        if (cmdError instanceof Error) {
+                                            console.error(chalk.red(`Setup command failed: ${command}`), cmdError.message);
+                                        } else {
+                                            console.error(chalk.red(`Setup command failed: ${command}`), cmdError);
+                                        }
+                                        // Continue with other commands
+                                    }
+                                } else {
+                                    console.warn(chalk.yellow(`Skipped unsafe or unapproved setup command: "${command}"`));
                                 }
                             }
                             console.log(chalk.green("Setup commands completed."));
                         } else {
                             console.warn(chalk.yellow(`${setupFilePath} does not contain valid setup commands.`));
                         }
-                    } catch (error: any) {
-                        console.warn(chalk.yellow(`Failed to parse setup file ${setupFilePath}:`), error.message);
+                    } catch (error: unknown) {
+                        if (error instanceof Error) {
+                            console.warn(chalk.yellow(`Failed to parse setup file ${setupFilePath}:`), error.message);
+                        } else {
+                            console.warn(chalk.yellow(`Failed to parse setup file ${setupFilePath}:`), error);
+                        }
                     }
                 }
             }
