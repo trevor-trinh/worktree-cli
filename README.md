@@ -30,6 +30,26 @@ wt new feature/deps -i pnpm
 wt new feature/vscode -e code
 ```
 
+### Create a new worktree with setup scripts
+
+```bash
+wt setup <branchName> [options]
+```
+
+Creates a new worktree and automatically runs setup commands from `worktrees.json` or `.cursor/worktrees.json`. This is useful for automating dependency installation, copying configuration files, or running custom setup scripts.
+
+Options:
+- `-p, --path <path>`: Specify a custom path for the worktree
+- `-c, --checkout`: Create new branch if it doesn't exist and checkout automatically
+- `-i, --install <packageManager>`: Package manager to use for installing dependencies (npm, pnpm, bun, etc.)
+- `-e, --editor <editor>`: Editor to use for opening the worktree (overrides default editor)
+
+Example:
+```bash
+wt setup feature/new-feature
+wt setup feature/quick-start -i pnpm
+```
+
 ### Create a new worktree from Pull Request Number
 
 ```bash
@@ -77,14 +97,16 @@ wt config path
 
 The default editor will be used when creating new worktrees unless overridden with the `-e` flag.
 
-### Setup Worktree Commands
+### Setup Worktree Configuration
 
-You can define setup commands in one of two locations to automatically execute them when creating a new worktree:
+You can define setup commands in one of two locations to automatically execute them when using `wt setup`:
 
 1. **Cursor's format**: `.cursor/worktrees.json` in the repository root
 2. **Generic format**: `worktrees.json` in the repository root
 
 The tool checks for `.cursor/worktrees.json` first, then falls back to `worktrees.json`.
+
+**Note:** Setup scripts only run when using the `wt setup` command. The `wt new` command will not execute setup scripts.
 
 #### Format Options:
 
@@ -108,11 +130,26 @@ The tool checks for `.cursor/worktrees.json` first, then falls back to `worktree
 ]
 ```
 
-- Commands are executed in the new worktree directory.
-- The `$ROOT_WORKTREE_PATH` environment variable is available, pointing to the main repository root.
-- Commands run with shell execution, so complex commands and piping are supported.
-- If a command fails, the error is logged, but setup continues with the next command.
-- The setup runs after worktree creation but before dependency installation (if `--install` is used).
+#### Security Features
+
+- **Command Blocklist**: Dangerous command patterns are automatically blocked
+- **Blocked Patterns**: 
+  - `rm -rf` and recursive deletions
+  - `sudo` and privilege escalation commands
+  - `chmod`, `chown` permission changes
+  - Piping downloads to shell (`curl | sh`, `wget | sh`)
+  - Disk operations (`dd`, `mkfs`, `format`)
+  - System commands (`shutdown`, `reboot`, `kill -9`)
+  - Fork bombs and malicious patterns
+- **Flexible Execution**: Any command not matching dangerous patterns is allowed, giving you full flexibility for legitimate setup tasks
+
+#### Execution Details
+
+- Commands are executed in the new worktree directory
+- The `$ROOT_WORKTREE_PATH` environment variable is available, pointing to the main repository root
+- Commands run with shell execution, so complex commands and piping are supported
+- If a command fails, the error is logged, but setup continues with the next command
+- The setup runs after worktree creation but before dependency installation (if `--install` is used)
 
 ### List worktrees
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { newWorktreeHandler } from "./commands/new.js";
+import { setupWorktreeHandler } from "./commands/setup.js";
 import { listWorktreesHandler } from "./commands/list.js";
 import { removeWorktreeHandler } from "./commands/remove.js";
 import { mergeWorktreeHandler } from "./commands/merge.js";
@@ -23,6 +24,15 @@ program
     .option("-e, --editor <editor>", "Editor to use for opening the worktree (e.g., code, webstorm, windsurf, etc.)")
     .description("Create a new worktree for the specified branch, install dependencies if specified, and open in editor.")
     .action(newWorktreeHandler);
+program
+    .command("setup")
+    .argument("[branchName]", "Name of the branch to base this worktree on")
+    .option("-p, --path <path>", "Relative path/folder name for new worktree")
+    .option("-c, --checkout", "Create new branch if it doesn't exist and checkout automatically", false)
+    .option("-i, --install <packageManager>", "Package manager to use for installing dependencies (npm, pnpm, bun, etc.)")
+    .option("-e, --editor <editor>", "Editor to use for opening the worktree (e.g., code, webstorm, windsurf, etc.)")
+    .description("Create a new worktree and run setup scripts from worktrees.json or .cursor/worktrees.json")
+    .action(setupWorktreeHandler);
 program
     .command("list")
     .alias("ls")
