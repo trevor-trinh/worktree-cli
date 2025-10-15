@@ -65,4 +65,14 @@ export async function isMainRepoBare(cwd: string = '.'): Promise<boolean> {
         console.warn(chalk.yellow(`Could not reliably determine if the main repository is bare. Proceeding cautiously. Error:`), error.stderr || error.message);
         return false; // Default to non-bare to avoid blocking unnecessarily, but warn the user.
     }
-} 
+}
+
+export async function getRepoRoot(cwd: string = "."): Promise<string | null> {
+    try {
+        const { stdout } = await execa("git", ["-C", cwd, "rev-parse", "--show-toplevel"]);
+        return stdout.trim();
+    } catch (error) {
+        console.error(chalk.yellow("Could not determine repository root."), error);
+        return null;
+    }
+}
