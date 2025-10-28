@@ -56,9 +56,14 @@ export function getDefaultWorktreePath(): string | undefined {
 // Function to set the default worktree path
 export function setDefaultWorktreePath(worktreePath: string): void {
     // Resolve to absolute path and expand ~ to home directory
-    const resolvedPath = worktreePath.startsWith('~')
-        ? path.join(process.env.HOME || process.env.USERPROFILE || '', worktreePath.slice(1))
-        : path.resolve(worktreePath);
+    let resolvedPath: string;
+    if (worktreePath.startsWith('~')) {
+        const home = process.env.HOME || process.env.USERPROFILE || '';
+        const rest = worktreePath.replace(/^~[\/\\]?/, '');
+        resolvedPath = path.join(home, rest);
+    } else {
+        resolvedPath = path.resolve(worktreePath);
+    }
     config.set('defaultWorktreePath', resolvedPath);
 }
 
