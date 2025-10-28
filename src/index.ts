@@ -154,15 +154,26 @@ program
   .command("config")
   .description("Manage CLI configuration settings.")
   .addCommand(
-    new Command("set").description("Set a configuration value.").addCommand(
-      new Command("editor")
-        .argument(
-          "<editorName>",
-          "Name of the editor command (e.g., code, cursor, webstorm)"
-        )
-        .description("Set the default editor to open worktrees in.")
-        .action((editorName) => configHandler("set", "editor", editorName))
-    )
+    new Command("set")
+      .description("Set a configuration value.")
+      .addCommand(
+        new Command("editor")
+          .argument(
+            "<editorName>",
+            "Name of the editor command (e.g., code, cursor, webstorm)"
+          )
+          .description("Set the default editor to open worktrees in.")
+          .action((editorName) => configHandler("set", "editor", editorName))
+      )
+      .addCommand(
+        new Command("worktreepath")
+          .argument(
+            "<path>",
+            "Directory path where worktrees will be created (supports ~ for home directory)"
+          )
+          .description("Set the default directory for creating worktrees.")
+          .action((path) => configHandler("set", "worktreepath", path))
+      )
   )
   .addCommand(
     new Command("get")
@@ -171,6 +182,20 @@ program
         new Command("editor")
           .description("Get the currently configured default editor.")
           .action(() => configHandler("get", "editor"))
+      )
+      .addCommand(
+        new Command("worktreepath")
+          .description("Get the currently configured default worktree directory.")
+          .action(() => configHandler("get", "worktreepath"))
+      )
+  )
+  .addCommand(
+    new Command("clear")
+      .description("Clear a configuration value.")
+      .addCommand(
+        new Command("worktreepath")
+          .description("Clear the default worktree directory (revert to sibling directory behavior).")
+          .action(() => configHandler("clear", "worktreepath"))
       )
   )
   .addCommand(

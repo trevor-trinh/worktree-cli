@@ -2,8 +2,8 @@ import { execa } from "execa";
 import chalk from "chalk";
 import { stat } from "node:fs/promises";
 import { resolve, join, dirname, basename } from "node:path";
-import { getDefaultEditor } from "../config.js";
-import { getCurrentBranch, isWorktreeClean } from "../utils/git.js";
+import { getDefaultEditor, getDefaultWorktreePath } from "../config.js";
+import { getCurrentBranch, isWorktreeClean, isMainRepoBare } from "../utils/git.js";
 // Helper function to get PR branch name using gh cli
 async function getBranchNameFromPR(prNumber) {
     try {
@@ -109,11 +109,19 @@ export async function prWorktreeHandler(prNumber, options) {
             folderName = options.path;
         }
         else {
-            const currentDir = process.cwd();
-            const parentDir = dirname(currentDir);
-            const currentDirName = basename(currentDir);
             const sanitizedBranchName = prBranchName.replace(/\//g, '-'); // Use PR branch name for consistency
-            folderName = join(parentDir, `${currentDirName}-${sanitizedBranchName}`);
+            const globalPath = getDefaultWorktreePath();
+            if (globalPath) {
+                // Use global worktree path: ~/worktrees/feature-login
+                folderName = join(globalPath, sanitizedBranchName);
+            }
+            else {
+                // Fall back to sibling directory behavior: ../myrepo-feature-login
+                const currentDir = process.cwd();
+                const parentDir = dirname(currentDir);
+                const currentDirName = basename(currentDir);
+                folderName = join(parentDir, `${currentDirName}-${sanitizedBranchName}`);
+            }
         }
         const resolvedPath = resolve(folderName);
         // 6. Check if directory already exists
@@ -154,6 +162,13 @@ export async function prWorktreeHandler(prNumber, options) {
             // 7. Create the worktree using the PR branch (now only fetched/tracked, not checked out here)
             console.log(chalk.blue(`Creating new worktree for branch "${prBranchName}" at: ${resolvedPath}`));
             try {
+                // >>> ADD SAFETY CHECK HERE <<<
+                if (await isMainRepoBare()) {
+                    console.error(chalk.red("❌ Error: The main repository is configured as 'bare' (core.bare=true)."));
+                    console.error(chalk.red("   This prevents normal Git operations. Please fix the configuration:"));
+                    console.error(chalk.cyan("   git config core.bare false"));
+                    process.exit(1);
+                }
                 // Use the PR branch name which 'gh pr checkout' fetched/tracked locally
                 await execa("git", ["worktree", "add", resolvedPath, prBranchName]);
                 worktreeCreated = true;

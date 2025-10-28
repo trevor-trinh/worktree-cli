@@ -12,6 +12,7 @@ const packageName = packageJson.name;
 // Define the structure of the configuration
 interface ConfigSchema {
     defaultEditor: string;
+    defaultWorktreePath?: string;
 }
 
 // Initialize conf with a schema and project name
@@ -20,6 +21,10 @@ const schema = {
     defaultEditor: {
         type: 'string',
         default: 'cursor', // Default editor is 'cursor'
+    },
+    defaultWorktreePath: {
+        type: 'string',
+        default: undefined, // No default, falls back to sibling directory behavior
     },
 } as const;
 
@@ -41,4 +46,23 @@ export function setDefaultEditor(editor: string): void {
 // Function to get the path to the config file (for debugging/info)
 export function getConfigPath(): string {
     return config.path;
+}
+
+// Function to get the default worktree path
+export function getDefaultWorktreePath(): string | undefined {
+    return config.get('defaultWorktreePath');
+}
+
+// Function to set the default worktree path
+export function setDefaultWorktreePath(worktreePath: string): void {
+    // Resolve to absolute path and expand ~ to home directory
+    const resolvedPath = worktreePath.startsWith('~')
+        ? path.join(process.env.HOME || process.env.USERPROFILE || '', worktreePath.slice(1))
+        : path.resolve(worktreePath);
+    config.set('defaultWorktreePath', resolvedPath);
+}
+
+// Function to clear the default worktree path
+export function clearDefaultWorktreePath(): void {
+    config.delete('defaultWorktreePath');
 } 

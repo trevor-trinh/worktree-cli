@@ -2,8 +2,8 @@ import { execa } from "execa";
 import chalk from "chalk";
 import { stat } from "node:fs/promises";
 import { resolve, join, dirname, basename } from "node:path";
-import { getDefaultEditor } from "../config.js";
-import { isWorktreeClean } from "../utils/git.js";
+import { getDefaultEditor, getDefaultWorktreePath } from "../config.js";
+import { isWorktreeClean, isMainRepoBare } from "../utils/git.js";
 export async function newWorktreeHandler(branchName = "main", options) {
     try {
         // 1. Validate we're in a git repo
@@ -11,11 +11,10 @@ export async function newWorktreeHandler(branchName = "main", options) {
         console.log(chalk.blue("Checking if main worktree is clean..."));
         const isClean = await isWorktreeClean(".");
         if (!isClean) {
-            console.warn(chalk.yellow("⚠️ Warning: Your main worktree is not clean."));
-            console.warn(chalk.yellow("While 'wt new' might succeed, it's generally recommended to have a clean state."));
-            console.warn(chalk.cyan("Run 'git status' to review changes. Consider committing or stashing."));
-            // Decide whether to exit or just warn. Warning might be sufficient here.
-            // process.exit(1);
+            console.error(chalk.red("❌ Error: Your main worktree is not clean."));
+            console.error(chalk.yellow("Creating a new worktree requires a clean main worktree state."));
+            console.error(chalk.cyan("Please commit, stash, or discard your changes. Run 'git status' to see the changes."));
+            process.exit(1); // Exit if not clean
         }
         else {
             console.log(chalk.green("✅ Main worktree is clean."));
@@ -29,11 +28,18 @@ export async function newWorktreeHandler(branchName = "main", options) {
             // Derive the short name for the directory from the branch name
             // This handles cases like 'feature/login' -> 'login'
             const shortBranchName = branchName.split('/').filter(part => part.length > 0).pop() || branchName;
-            const currentDir = process.cwd();
-            const parentDir = dirname(currentDir);
-            const currentDirName = basename(currentDir);
-            // Create a sibling directory using the short branch name
-            folderName = join(parentDir, `${currentDirName}-${shortBranchName}`);
+            const globalPath = getDefaultWorktreePath();
+            if (globalPath) {
+                // Use global worktree path: ~/worktrees/login
+                folderName = join(globalPath, shortBranchName);
+            }
+            else {
+                // Fall back to sibling directory behavior: ../myrepo-login
+                const currentDir = process.cwd();
+                const parentDir = dirname(currentDir);
+                const currentDirName = basename(currentDir);
+                folderName = join(parentDir, `${currentDirName}-${shortBranchName}`);
+            }
         }
         const resolvedPath = resolve(folderName);
         // Check if directory already exists
@@ -71,6 +77,12 @@ export async function newWorktreeHandler(branchName = "main", options) {
         }
         else {
             console.log(chalk.blue(`Creating new worktree for branch "${branchName}" at: ${resolvedPath}`));
+            if (await isMainRepoBare()) {
+                console.error(chalk.red("❌ Error: The main repository is configured as 'bare' (core.bare=true)."));
+                console.error(chalk.red("   This prevents normal Git operations. Please fix the configuration:"));
+                console.error(chalk.cyan("   git config core.bare false"));
+                process.exit(1);
+            }
             if (!branchExists) {
                 console.log(chalk.yellow(`Branch "${branchName}" doesn't exist. Creating new branch with worktree...`));
                 // Create a new branch and worktree in one command with -b flag

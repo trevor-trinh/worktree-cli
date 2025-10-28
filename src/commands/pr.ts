@@ -2,7 +2,7 @@ import { execa } from "execa";
 import chalk from "chalk";
 import { stat } from "node:fs/promises";
 import { resolve, join, dirname, basename } from "node:path";
-import { getDefaultEditor } from "../config.js";
+import { getDefaultEditor, getDefaultWorktreePath } from "../config.js";
 import { getCurrentBranch, isWorktreeClean, isMainRepoBare } from "../utils/git.js";
 
 // Helper function to get PR branch name using gh cli
@@ -114,11 +114,19 @@ export async function prWorktreeHandler(
         if (options.path) {
             folderName = options.path;
         } else {
-            const currentDir = process.cwd();
-            const parentDir = dirname(currentDir);
-            const currentDirName = basename(currentDir);
             const sanitizedBranchName = prBranchName.replace(/\//g, '-'); // Use PR branch name for consistency
-            folderName = join(parentDir, `${currentDirName}-${sanitizedBranchName}`);
+
+            const globalPath = getDefaultWorktreePath();
+            if (globalPath) {
+                // Use global worktree path: ~/worktrees/feature-login
+                folderName = join(globalPath, sanitizedBranchName);
+            } else {
+                // Fall back to sibling directory behavior: ../myrepo-feature-login
+                const currentDir = process.cwd();
+                const parentDir = dirname(currentDir);
+                const currentDirName = basename(currentDir);
+                folderName = join(parentDir, `${currentDirName}-${sanitizedBranchName}`);
+            }
         }
         const resolvedPath = resolve(folderName);
 

@@ -97,6 +97,42 @@ wt config path
 
 The default editor will be used when creating new worktrees unless overridden with the `-e` flag.
 
+### Configure Default Worktree Directory
+
+You can set a global directory where all worktrees will be created:
+
+```bash
+# Set default worktree directory
+wt config set worktreepath <path>
+
+# Examples:
+wt config set worktreepath ~/worktrees        # Use ~/worktrees
+wt config set worktreepath /Users/me/dev/.wt   # Use absolute path
+
+# Get current default worktree directory
+wt config get worktreepath
+
+# Clear the setting (revert to sibling directory behavior)
+wt config clear worktreepath
+```
+
+**Path Resolution Priority:**
+1. `--path` flag (highest priority)
+2. `defaultWorktreePath` config setting
+3. Sibling directory behavior (default fallback)
+
+**Behavior Examples:**
+
+Without global path configured (default):
+- Current directory: `/Users/me/projects/myrepo`
+- Command: `wt new feature/login`
+- Creates: `/Users/me/projects/myrepo-login`
+
+With global path configured (`~/worktrees`):
+- Current directory: `/Users/me/projects/myrepo`
+- Command: `wt new feature/login`
+- Creates: `~/worktrees/login`
+
 ### Setup Worktree Configuration
 
 You can define setup commands in one of two locations to automatically execute them when using `wt setup`:

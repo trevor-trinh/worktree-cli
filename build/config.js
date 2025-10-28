@@ -14,6 +14,10 @@ const schema = {
         type: 'string',
         default: 'cursor', // Default editor is 'cursor'
     },
+    defaultWorktreePath: {
+        type: 'string',
+        default: undefined, // No default, falls back to sibling directory behavior
+    },
 };
 const config = new Conf({
     projectName: packageName, // Use the actual package name
@@ -30,4 +34,20 @@ export function setDefaultEditor(editor) {
 // Function to get the path to the config file (for debugging/info)
 export function getConfigPath() {
     return config.path;
+}
+// Function to get the default worktree path
+export function getDefaultWorktreePath() {
+    return config.get('defaultWorktreePath');
+}
+// Function to set the default worktree path
+export function setDefaultWorktreePath(worktreePath) {
+    // Resolve to absolute path and expand ~ to home directory
+    const resolvedPath = worktreePath.startsWith('~')
+        ? path.join(process.env.HOME || process.env.USERPROFILE || '', worktreePath.slice(1))
+        : path.resolve(worktreePath);
+    config.set('defaultWorktreePath', resolvedPath);
+}
+// Function to clear the default worktree path
+export function clearDefaultWorktreePath() {
+    config.delete('defaultWorktreePath');
 }

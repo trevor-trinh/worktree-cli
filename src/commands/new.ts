@@ -2,7 +2,7 @@ import { execa } from "execa";
 import chalk from "chalk";
 import { stat } from "node:fs/promises";
 import { resolve, join, dirname, basename } from "node:path";
-import { getDefaultEditor } from "../config.js";
+import { getDefaultEditor, getDefaultWorktreePath } from "../config.js";
 import { isWorktreeClean, isMainRepoBare } from "../utils/git.js";
 
 export async function newWorktreeHandler(
@@ -33,11 +33,17 @@ export async function newWorktreeHandler(
             // This handles cases like 'feature/login' -> 'login'
             const shortBranchName = branchName.split('/').filter(part => part.length > 0).pop() || branchName;
 
-            const currentDir = process.cwd();
-            const parentDir = dirname(currentDir);
-            const currentDirName = basename(currentDir);
-            // Create a sibling directory using the short branch name
-            folderName = join(parentDir, `${currentDirName}-${shortBranchName}`);
+            const globalPath = getDefaultWorktreePath();
+            if (globalPath) {
+                // Use global worktree path: ~/worktrees/login
+                folderName = join(globalPath, shortBranchName);
+            } else {
+                // Fall back to sibling directory behavior: ../myrepo-login
+                const currentDir = process.cwd();
+                const parentDir = dirname(currentDir);
+                const currentDirName = basename(currentDir);
+                folderName = join(parentDir, `${currentDirName}-${shortBranchName}`);
+            }
         }
         const resolvedPath = resolve(folderName);
 
